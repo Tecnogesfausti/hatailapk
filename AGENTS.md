@@ -8,7 +8,8 @@ La aplicación debe acceder a dos viviendas, **Casa** y **Sol**, cada una con su
 
 ## Flujo de conexión obligatorio
 
-- Al arrancar, mostrar «Conectar a Casa» y «Conectar a Sol».
+- Al reabrir, restaurar el hogar seleccionado y verificar su VPN antes de mostrar HA.
+- Mostrar Casa/Sol solo sin selección. Atrás sale del hogar, olvida la selección y desconecta Tailscale; esperar el cierre antes de permitir elegir de nuevo.
 - Asociar cada perfil con su servidor HA y su identidad/tailnet Tailscale.
 - Tras elegir, activar automáticamente la conexión correspondiente, una vez concedidos los permisos y completada la autenticación inicial.
 - Comprobar la identidad/tailnet activa, la conectividad del túnel y la disponibilidad del HA elegido antes de mostrarlo como conectado.

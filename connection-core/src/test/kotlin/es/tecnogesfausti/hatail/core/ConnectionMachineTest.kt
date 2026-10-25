@@ -38,7 +38,7 @@ class ConnectionMachineTest {
             val selected = ConnectionMachine.reduce(ConnectionState(), Event.Select(profile))
             assertEquals(Phase.PERMISSION, selected.state.phase)
             assertEquals(listOf(Effect.CancelBefore(1), Effect.CloseHomeAssistant,
-                Effect.StartDeadline(1), Effect.PrepareVpn(1)), selected.effects)
+                Effect.RememberHome(1, profile), Effect.StartDeadline(1), Effect.PrepareVpn(1)), selected.effects)
             val permitted = ConnectionMachine.reduce(selected.state, Event.PermissionResult(1, true))
             assertEquals(listOf(Effect.StopTunnel(1)), permitted.effects)
             val stopped = ConnectionMachine.reduce(permitted.state, Event.TunnelStopped(1))
@@ -107,7 +107,9 @@ class ConnectionMachineTest {
 
     @Test fun `switching homes invalidates old probe and tunnel callbacks`() {
         val old = checking()
-        val current = ConnectionMachine.reduce(old, Event.Select(sol)).state
+        val exiting = ConnectionMachine.reduce(old, Event.Disconnect).state
+        val idle = ConnectionMachine.reduce(exiting, Event.TunnelStopped(exiting.attempt)).state
+        val current = ConnectionMachine.reduce(idle, Event.Select(sol)).state
         val events = listOf(Event.ServerVerified(old.attempt, casa.homeAssistantUrl, casa.homeAssistantServerId),
             Event.TunnelReady(old.attempt, ready(casa)), Event.TunnelStopped(old.attempt),
             Event.Failed(old.attempt, Failure.TIMEOUT))
@@ -177,5 +179,67 @@ class ConnectionMachineTest {
             "https://ha.example#token", "/relative").forEach { value ->
             assertThrows(IllegalArgumentException::class.java) { casa.copy(homeAssistantUrl = URI(value)) }
         }
+    }
+
+    @Test fun `reopening restores either selected home without stopping its working VPN`() {
+        listOf(casa, sol).forEach { profile ->
+            val restored = ConnectionMachine.reduce(ConnectionState(), Event.Resume(profile))
+            assertEquals(Phase.INSPECTING, restored.state.phase)
+            assertEquals(profile, restored.state.profile)
+            assertTrue(restored.effects.contains(Effect.GuardHomeAssistant))
+            assertTrue(restored.effects.none { it is Effect.StopTunnel || it is Effect.Activate })
+            val verified = ConnectionMachine.reduce(restored.state,
+                Event.TunnelReady(restored.state.attempt, ready(profile)))
+            assertEquals(Phase.CHECKING_HA, verified.state.phase)
+            assertEquals(listOf(Effect.VerifyServer(restored.state.attempt, profile)), verified.effects)
+        }
+    }
+
+    @Test fun `restoring a home with a different or stopped VPN reconnects that same home`() {
+        listOf(ready(sol), ready(casa).copy(vpnEstablished = false)).forEach { identity ->
+            val restored = ConnectionMachine.reduce(ConnectionState(), Event.Resume(casa)).state
+            val result = ConnectionMachine.reduce(restored, Event.TunnelReady(restored.attempt, identity))
+            assertEquals(Phase.PERMISSION, result.state.phase)
+            assertEquals(casa, result.state.profile)
+            assertEquals(listOf(Effect.PrepareVpn(restored.attempt)), result.effects)
+        }
+    }
+
+    @Test fun `no remembered home confirms tunnel closure before allowing selection`() {
+        val restored = ConnectionMachine.reduce(ConnectionState(), Event.Resume(null))
+        assertEquals(Phase.STOPPING, restored.state.phase)
+        assertTrue(restored.effects.contains(Effect.ForgetHome))
+        val premature = ConnectionMachine.reduce(restored.state, Event.Select(casa))
+        assertEquals(Transition(restored.state), premature)
+        val closed = ConnectionMachine.reduce(restored.state, Event.TunnelStopped(restored.state.attempt))
+        assertEquals(Phase.IDLE, closed.state.phase)
+    }
+
+    @Test fun `changing homes requires Back and confirmed tunnel closure`() {
+        val selected = selecting()
+        assertEquals(Transition(selected), ConnectionMachine.reduce(selected, Event.Select(sol)))
+        val failed = ConnectionMachine.reduce(selected,
+            Event.Failed(selected.attempt, Failure.AUTHENTICATION_REQUIRED)).state
+        assertEquals(Transition(failed), ConnectionMachine.reduce(failed, Event.Select(sol)))
+        val exiting = ConnectionMachine.reduce(failed, Event.Disconnect)
+        assertTrue(exiting.effects.contains(Effect.ForgetHome))
+        assertEquals(Transition(exiting.state), ConnectionMachine.reduce(exiting.state, Event.Select(sol)))
+        val idle = ConnectionMachine.reduce(exiting.state, Event.TunnelStopped(exiting.state.attempt)).state
+        assertEquals(sol, ConnectionMachine.reduce(idle, Event.Select(sol)).state.profile)
+    }
+
+    @Test fun `Back during restore prevents a late callback from reopening the home`() {
+        val restored = ConnectionMachine.reduce(ConnectionState(), Event.Resume(casa)).state
+        val exiting = ConnectionMachine.reduce(restored, Event.Disconnect).state
+        assertEquals(Transition(exiting), ConnectionMachine.reduce(exiting,
+            Event.TunnelReady(restored.attempt, ready(casa))))
+    }
+
+    @Test fun `failed tunnel closure never enables home selection`() {
+        val exiting = ConnectionMachine.reduce(selecting(), Event.Disconnect).state
+        val failed = ConnectionMachine.reduce(exiting, Event.Failed(exiting.attempt, Failure.TIMEOUT)).state
+        assertEquals(Phase.ERROR, failed.phase)
+        assertNull(failed.profile)
+        assertEquals(Transition(failed), ConnectionMachine.reduce(failed, Event.Select(sol)))
     }
 }

@@ -18,11 +18,12 @@ class HomeSelectorView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
 ) : LinearLayout(context, attrs) {
     var onSelect: (HomeId) -> Unit = {}
-    var onDisconnect: () -> Unit = {}
+    /** Used only to retry a failed exit; the host maps system Back to Event.Disconnect. */
+    var onRetryExit: () -> Unit = {}
     private var current = ConnectionState()
     private val status = TextView(context)
     private val retry = Button(context)
-    private val disconnect = Button(context)
+    private val choices = LinearLayout(context).apply { orientation = VERTICAL }
 
     init {
         orientation = VERTICAL
@@ -33,22 +34,23 @@ class HomeSelectorView @JvmOverloads constructor(
             textSize = 28f
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) isAccessibilityHeading = true
         })
-        addView(TextView(context).apply { setText(R.string.hatail_choose_home) })
+        choices.addView(TextView(context).apply { setText(R.string.hatail_choose_home) })
         listOf(HomeId.CASA to R.string.hatail_connect_casa, HomeId.SOL to R.string.hatail_connect_sol)
             .forEach { (home, label) ->
-                addView(Button(context).apply {
+                choices.addView(Button(context).apply {
                     setText(label)
                     setOnClickListener { onSelect(home) }
                 })
             }
+        addView(choices)
         status.accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         addView(status)
         retry.setText(R.string.hatail_retry)
-        retry.setOnClickListener { current.profile?.let { onSelect(it.home) } }
+        retry.setOnClickListener {
+            val profile = current.profile
+            if (profile == null) onRetryExit() else onSelect(profile.home)
+        }
         addView(retry)
-        disconnect.setText(R.string.hatail_disconnect)
-        disconnect.setOnClickListener { onDisconnect() }
-        addView(disconnect)
         render(current)
     }
 
@@ -57,6 +59,7 @@ class HomeSelectorView @JvmOverloads constructor(
         current = state
         val label = when (state.phase) {
             Phase.IDLE -> R.string.hatail_idle
+            Phase.INSPECTING -> R.string.hatail_inspecting
             Phase.PERMISSION -> R.string.hatail_permission
             Phase.STOPPING -> R.string.hatail_stopping
             Phase.ACTIVATING -> R.string.hatail_activating
@@ -69,8 +72,8 @@ class HomeSelectorView @JvmOverloads constructor(
             val home = context.getString(if (state.profile?.home == HomeId.CASA) R.string.hatail_casa else R.string.hatail_sol)
             status.text = context.getString(R.string.hatail_connected_home, home)
         }
-        retry.visibility = if (state.phase == Phase.ERROR && state.profile != null) VISIBLE else GONE
-        disconnect.visibility = if (state.phase !in setOf(Phase.IDLE, Phase.ERROR)) VISIBLE else GONE
+        retry.visibility = if (state.phase == Phase.ERROR) VISIBLE else GONE
+        choices.visibility = if (state.phase == Phase.IDLE) VISIBLE else GONE
     }
 
     private fun errorLabel(failure: Failure?): Int = when (failure) {

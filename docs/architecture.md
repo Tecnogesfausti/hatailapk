@@ -8,15 +8,24 @@ La raíz contiene la integración propia y referencias Git a los originales. `up
 
 ## Cambio de vivienda
 
+La selección se recuerda entre aperturas, incluso si el proceso Android termina. En arranque o regreso al primer plano, el host carga la referencia guardada y envía `Event.Resume`. Si hay un hogar, inspecciona la VPN existente y vuelve a verificar HA sin reiniciar un túnel correcto ni perder la navegación de Companion. Si falta su VPN, reconecta ese mismo hogar. Nunca cambia automáticamente al otro.
+
+Solo Atrás abandona el hogar: el host envía `Event.Disconnect`, borra la selección persistida, cierra el panel y espera la parada confirmada del túnel para mostrar Casa/Sol. Un cierre de proceso o el envío a segundo plano no generan esa desconexión. Un error de red mantiene el hogar para reintentar; no abre el selector. La selección de otra casa se rechaza hasta completar la salida.
+
 ```mermaid
 stateDiagram-v2
-    [*] --> Selector
+    [*] --> Restaurar
+    Restaurar --> ComprobarTunel: hogar guardado
+    Restaurar --> CerrarParaSelector: sin hogar guardado
+    CerrarParaSelector --> Selector: túnel parado
     Selector --> PermisoVPN: Casa o Sol
+    ComprobarTunel --> ComprobarHA: VPN correcta
+    ComprobarTunel --> PermisoVPN: reconectar hogar guardado
     PermisoVPN --> CerrarTunel: autorizado
     CerrarTunel --> ActivarPerfil: cierre confirmado
     ActivarPerfil --> ComprobarHA: perfil + tailnet + VPN verificados
     ComprobarHA --> Panel: servidor autenticado verificado
-    Panel --> Selector: cambiar vivienda
+    Panel --> CerrarParaSelector: Atrás y olvidar selección
     Panel --> Error: pérdida de VPN
     Error --> PermisoVPN: reintentar
 ```
@@ -29,11 +38,14 @@ Cada perfil relaciona `HomeId`, ID de login Tailscale, sufijo MagicDNS, URL HA y
 
 - Procesar eventos y efectos en una cola serial. Ejecutar las operaciones del motor VPN en orden; ignorar callbacks antiguos no impide por sí solo una mutación tardía del backend.
 - `CancelBefore` invalida tareas anteriores, deadlines, sondas y navegación pendiente. Debe cancelar o esperar operaciones nativas anteriores antes de cambiar de perfil.
+- `RememberHome` guarda la referencia seleccionada de forma durable; `ForgetHome` la elimina al salir con Atrás. Ambas operaciones pertenecen a la cola serial y respetan el intento vigente. Un fallo de almacenamiento impide avanzar. No guardar credenciales en ellas.
+- `GuardHomeAssistant` oculta temporalmente el panel y suspende sus peticiones durante la revalidación, conservando su navegación y sesión. `InspectTunnel` devuelve una identidad observada, incluso si la VPN está parada, usando `TunnelReady`; no solicita todavía un cambio de perfil.
 - `CloseHomeAssistant` cierra el panel y suspende conexiones HA que pudieran usar la vivienda anterior antes de cualquier cambio de túnel.
 - `PrepareVpn` usa el consentimiento Android mediante `VpnService.prepare()`. Solo emitir `TunnelStopped` tras confirmar el cierre real.
 - `Activate` cambia el perfil, arranca el motor y espera tanto su estado `Running` como el túnel establecido. Emitir `TunnelReady` con datos observados del motor, nunca con valores copiados de la configuración.
 - `VerifyServer` verifica la ruta y conexión autenticada del HA registrado. `OpenHomeAssistant` debe volver a comprobar el intento vigente antes de navegar.
 - Usar un deadline inicial de 30 segundos, ajustable tras pruebas. Traducir errores sin registrar secretos; mantener observación de permisos, identidad y estado del túnel después de conectar.
+- No asociar `onStop`, `onDestroy`, Inicio ni segundo plano con `Disconnect`. El host intercepta Atrás al salir del hogar. Tras una salida fallida se muestra error y reintento de parada, nunca el selector sobre un túnel aún sin cerrar.
 
 El cliente upstream expone `profiles`, `currentProfile`, `switchProfile` y `status` en [Client.kt](https://github.com/tailscale/tailscale-android/blob/4aae7d26d1918b9264236b4ddf77060f8280ff5f/android/src/main/java/com/tailscale/ipn/ui/localapi/Client.kt). Son APIs internas del cliente, no un contrato de control entre APK independientes. `App`, el servicio y el binding Go requieren una adaptación conjunta; no basta con copiar el manifiesto.
 

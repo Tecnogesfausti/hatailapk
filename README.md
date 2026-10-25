@@ -2,12 +2,14 @@
 
 Una APK Android para elegir **Casa** o **Sol**, activar su conexión Tailscale y abrir el Home Assistant correspondiente sin depender de Cloudflare para el acceso al panel.
 
+Al reabrir, continuar en el hogar seleccionado como en Companion, tras comprobar su VPN. Llevar la aplicación a segundo plano no abandona el hogar ni desconecta el túnel. El botón o gesto **Atrás** sale del hogar, desconecta Tailscale y devuelve al selector cuando el cierre esté confirmado. El selector aparece en el primer uso o después de esa salida explícita.
+
 ## Estado actual
 
 Primera base de desarrollo, **todavía sin APK instalable ni conexión VPN integrada**:
 
 - `connection-core/`: máquina de estados Kotlin; exige verificar perfil Tailscale, tailnet y servidor HA antes de autorizar la navegación.
-- `selector-ui/`: biblioteca Android con botones Casa/Sol, progreso, errores, reintento y desconexión. Textos en español e inglés.
+- `selector-ui/`: biblioteca Android con Casa/Sol cuando no hay hogar seleccionado, progreso, errores y reintento. Textos en español e inglés; el host gestionará Atrás.
 - `upstream/`: tres submódulos con las fuentes originales fijadas en `upstream.lock.json`; conservan sus historiales y licencias.
 - `tools/`: preparación y comprobación de fuentes, y alternativa de pruebas sin Gradle.
 - `.github/workflows/verify.yml`: pruebas, compilación de biblioteca y comprobación de versiones upstream.

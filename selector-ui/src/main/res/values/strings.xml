@@ -6,7 +6,7 @@
     <string name="hatail_connect_casa">Connect to Casa</string>
     <string name="hatail_connect_sol">Connect to Sol</string>
     <string name="hatail_retry">Retry</string>
-    <string name="hatail_disconnect">Disconnect</string>
+    <string name="hatail_inspecting">Checking the selected home’s VPN…</string>
     <string name="hatail_idle">Select Casa or Sol to connect.</string>
     <string name="hatail_permission">Checking VPN permission…</string>
     <string name="hatail_stopping">Stopping the previous connection…</string>
