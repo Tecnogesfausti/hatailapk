@@ -1,12 +1,10 @@
 # Plan de validación
 
-## Verificación inicial realizada
+## Verificación realizada
 
-La ejecución enlazada a continuación corresponde a la base anterior. La revisión del flujo de reapertura/Atrás añade seis pruebas (24 en total) y requiere su propia ejecución CI.
-
-- 18 pruebas JUnit del núcleo: selección de ambas viviendas, permisos, orden de operaciones, identidad, servidor HA, cambio de perfil, resultados tardíos, desconexión, errores, reintento y pérdida de VPN.
+- 24 pruebas JUnit del núcleo: selección de ambas viviendas, permisos, orden de operaciones, identidad, servidor HA, cambio de perfil, resultados tardíos, desconexión, errores, reintento, pérdida de VPN, restauración del hogar y salida con Atrás.
 - Ejecución local mediante Kotlin 2.2.20 y JUnit 4.13 instalados. La misma suite pasó también en CI con las versiones declaradas: Kotlin 2.1.20 y JUnit 4.13.2.
-- [GitHub Actions, ejecución 40219917982](https://github.com/Tecnogesfausti/hatailapk/actions/runs/40219917982): 18 pruebas superadas, biblioteca Android compilada, `lintDebug` superado y los tres submódulos verificados. El artefacto `selector-library-and-test-results` contiene el AAR y el informe de pruebas; no es una APK.
+- [GitHub Actions, ejecución 40220527618](https://github.com/Tecnogesfausti/hatailapk/actions/runs/40220527618): 24 pruebas superadas, biblioteca Android compilada, `lintDebug` superado y los tres submódulos verificados. El artefacto `selector-library-and-test-results` contiene el AAR y el informe de pruebas; no es una APK.
 - La vista también compiló localmente contra Android SDK 35; se verificaron las mismas 23 claves de texto en español e inglés.
 - Gradle local bloqueado por `java.net.SocketException: Operation not permitted` al crear el socket de su daemon. No se considera compilación Android superada por este intento.
 - Git/SSH local sin resolución DNS de `github.com`; no se ha validado la deploy key desde esta terminal. La conexión GitHub permite consultar y publicar archivos por API.
