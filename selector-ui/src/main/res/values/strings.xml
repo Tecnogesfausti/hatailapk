@@ -1,0 +1,25 @@
+<resources>
+    <string name="hatail_title">HATailAPK</string>
+    <string name="hatail_choose_home">Choose a home</string>
+    <string name="hatail_casa">Casa</string>
+    <string name="hatail_sol">Sol</string>
+    <string name="hatail_connect_casa">Connect to Casa</string>
+    <string name="hatail_connect_sol">Connect to Sol</string>
+    <string name="hatail_retry">Retry</string>
+    <string name="hatail_disconnect">Disconnect</string>
+    <string name="hatail_idle">Select Casa or Sol to connect.</string>
+    <string name="hatail_permission">Checking VPN permission…</string>
+    <string name="hatail_stopping">Stopping the previous connection…</string>
+    <string name="hatail_activating">Activating and verifying Tailscale…</string>
+    <string name="hatail_checking">Verifying Home Assistant…</string>
+    <string name="hatail_connected">Connection verified.</string>
+    <string name="hatail_connected_home">Connected to %1$s</string>
+    <string name="hatail_permission_denied">VPN permission denied. Retry to grant access.</string>
+    <string name="hatail_auth_required">Sign in to the selected Tailscale account again.</string>
+    <string name="hatail_wrong_tailnet">The active VPN does not match the selected home.</string>
+    <string name="hatail_ha_unreachable">Home Assistant is unavailable through this connection.</string>
+    <string name="hatail_wrong_ha">The responding server does not match the selected home.</string>
+    <string name="hatail_timeout">The connection timed out. Retry.</string>
+    <string name="hatail_tunnel_lost">VPN connection lost.</string>
+    <string name="hatail_backend_unavailable">The Tailscale integration is unavailable.</string>
+</resources>

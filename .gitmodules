@@ -1,0 +1,9 @@
+[submodule "upstream/home-assistant-android"]
+	path = upstream/home-assistant-android
+	url = https://github.com/home-assistant/android.git
+[submodule "upstream/tailscale-android"]
+	path = upstream/tailscale-android
+	url = https://github.com/tailscale/tailscale-android.git
+[submodule "upstream/tailscale"]
+	path = upstream/tailscale
+	url = https://github.com/tailscale/tailscale.git

@@ -1,0 +1,15 @@
+/.deploy-keys/
+/.gradle/
+/.gradle-local/
+/.gradle-project/
+/.verification/
+**/build/
+/local.properties
+/.idea/
+*.iml
+/config/homes.local.json
+*.keystore
+*.jks
+/.git-local/
+__pycache__/
+*.pyc

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "homes": [
+    {
+      "id": "CASA",
+      "tailscaleProfileId": "REPLACE_WITH_CASA_LOGIN_PROFILE_ID",
+      "tailnetDnsSuffix": "casa-example.ts.net",
+      "homeAssistantUrl": "https://ha.casa-example.ts.net",
+      "homeAssistantServerId": "REPLACE_WITH_CASA_COMPANION_SERVER_ID"
+    },
+    {
+      "id": "SOL",
+      "tailscaleProfileId": "REPLACE_WITH_SOL_LOGIN_PROFILE_ID",
+      "tailnetDnsSuffix": "sol-example.ts.net",
+      "homeAssistantUrl": "https://ha.sol-example.ts.net",
+      "homeAssistantServerId": "REPLACE_WITH_SOL_COMPANION_SERVER_ID"
+    }
+  ]
+}

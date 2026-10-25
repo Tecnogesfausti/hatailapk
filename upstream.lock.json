@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "sources": {
+    "home-assistant-android": {
+      "url": "https://github.com/home-assistant/android.git",
+      "commit": "3a29efb83f87fc353fa45198dba73a145a7237f3",
+      "license": "Apache-2.0"
+    },
+    "tailscale-android": {
+      "url": "https://github.com/tailscale/tailscale-android.git",
+      "commit": "4aae7d26d1918b9264236b4ddf77060f8280ff5f",
+      "license": "BSD-3-Clause"
+    },
+    "tailscale": {
+      "url": "https://github.com/tailscale/tailscale.git",
+      "commit": "689a0c155f57857f9760c7e01ca3718815fe5a59",
+      "license": "BSD-3-Clause",
+      "moduleVersion": "v1.105.0-pre.0.20261001110716-689a0c155f57"
+    }
+  }
+}
