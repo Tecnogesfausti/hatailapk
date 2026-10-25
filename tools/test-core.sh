@@ -18,4 +18,5 @@ java -cp "$KOTLIN_HOME/lib/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
     -classpath "$KOTLIN_HOME/lib/kotlin-stdlib.jar:$JUNIT_JAR:$HAMCREST_JAR" \
     -d "$TASK_OUT/classes" "@$TASK_OUT/sources.txt"
 java -cp "$TASK_OUT/classes:$KOTLIN_HOME/lib/kotlin-stdlib.jar:$JUNIT_JAR:$HAMCREST_JAR" \
-    org.junit.runner.JUnitCore es.tecnogesfausti.hatail.core.ConnectionMachineTest
+    org.junit.runner.JUnitCore es.tecnogesfausti.hatail.core.ConnectionMachineTest \
+    es.tecnogesfausti.hatail.core.TailnetAddressPolicyTest

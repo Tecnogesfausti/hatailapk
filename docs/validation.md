@@ -1,5 +1,16 @@
 # Plan de validación
 
+## APK Casa instalada el 25 de octubre de 2026
+
+- APK ARM64 compilada sobre los tres commits fijados, con Companion y el motor Go integrados; firma verificada e instalación ADB correcta en Samsung SM-A566B (Android API 36).
+- 28 pruebas JUnit del núcleo y 3 regresiones del adaptador Companion superadas. Estas últimas comprueban el alta OAuth incompleta, la configuración de HTTP privado mediante VPN y el rechazo de una reasociación silenciosa de servidor.
+- El servidor privado respondió HTTP 200 desde el teléfono. Tras completar el usuario el inicio de sesión, se verificó que el WebView cargaba el panel `/lovelace/general` mediante la IP Tailscale y el puerto 8123, sin URL pública de Cloudflare.
+- Inicio/segundo plano y reapertura: el servicio VPN sigue activo y el panel continúa en Casa.
+- Atrás desde el frontend: aparece el selector y desaparece el servicio VPN integrado. Elegir Casa de nuevo arranca el servicio y recupera el panel privado sin repetir la autenticación. Se dejó el teléfono conectado a Casa.
+- APK instalada: `dist/hatailapk-casa-debug.apk`; SHA-256 `ebe45611a117e0811c0d3a4ee9dc7daa8d7a998c17f1052c3fe5b0290a7cb94a`.
+
+El APK Casa usa un adaptador experimental propio. Sol, las notificaciones importantes, el reinicio completo del teléfono y la entrega desde el hogar inactivo siguen pendientes de validación.
+
 ## Verificación realizada
 
 - 24 pruebas JUnit del núcleo: selección de ambas viviendas, permisos, orden de operaciones, identidad, servidor HA, cambio de perfil, resultados tardíos, desconexión, errores, reintento, pérdida de VPN, restauración del hogar y salida con Atrás.
@@ -7,7 +18,7 @@
 - [GitHub Actions, ejecución 40220527618](https://github.com/Tecnogesfausti/hatailapk/actions/runs/40220527618): 24 pruebas superadas, biblioteca Android compilada, `lintDebug` superado y los tres submódulos verificados. El artefacto `selector-library-and-test-results` contiene el AAR y el informe de pruebas; no es una APK.
 - La vista también compiló localmente contra Android SDK 35; se verificaron las mismas 23 claves de texto en español e inglés.
 - Gradle local bloqueado por `java.net.SocketException: Operation not permitted` al crear el socket de su daemon. No se considera compilación Android superada por este intento.
-- Git/SSH local sin resolución DNS de `github.com`; no se ha validado la deploy key desde esta terminal. La conexión GitHub permite consultar y publicar archivos por API.
+- En la sesión restringida inicial, Git/SSH no tenía resolución DNS. En la sesión con acceso al equipo se verificó el acceso SSH al repositorio y se recuperó ADB tras renovar la autorización del teléfono.
 
 ## Criterios para la primera APK
 

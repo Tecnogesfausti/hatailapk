@@ -4,7 +4,15 @@
 
 Una aplicación, un servicio VPN y dos perfiles persistentes. Android admite un único `VpnService` activo por usuario/perfil: [documentación oficial](https://developer.android.com/develop/connectivity/vpn). No se ejecutarán dos clientes Android paralelos.
 
-La raíz contiene la integración propia y referencias Git a los originales. `upstream/home-assistant-android` será la base funcional de Companion; `upstream/tailscale-android` aporta la adaptación Android/Go, y `upstream/tailscale` fija el motor compatible. Aún no se han fusionado ni convertido sus módulos en una aplicación única.
+La raíz contiene la integración propia y referencias Git a los originales. `upstream/home-assistant-android` aporta Companion; `upstream/tailscale-android`, la adaptación Android/Go; `upstream/tailscale` fija el motor compatible. `tools/prepare-integrated.py` genera worktrees en `.integration/`, convierte el cliente Android en biblioteca y permite que la aplicación Hilt de Companion herede la inicialización Tailscale.
+
+## Prototipo instalado de Casa
+
+`integration/companion/` contiene la pantalla Compose y un adaptador real para la primera vivienda. Usa las APIs internas del cliente Tailscale, verifica perfil/tailnet/servicio y conserva la selección cifrada. Companion mantiene su autenticación, registro y frontend originales, con un paquete propio para coexistir con las aplicaciones oficiales.
+
+El registro inicial crea una fila OAuth antes de tener un webhook. `HatailHomeAssistantRepository` espera un registro completo antes de consultar `getConfig`; los eventos de base de datos no deben cancelar ese alta intermedia. Solo después de la consulta autenticada se fija el servidor. La URL privada se asocia a la VPN como dirección interna; HTTP fuera de la red interna y las rutas cloud quedan deshabilitados.
+
+El adaptador Casa aún debe unificarse con todos los efectos de `ConnectionMachine` antes de habilitar Sol. Las pruebas del núcleo no sustituyen las pruebas del adaptador ni del teléfono.
 
 ## Cambio de vivienda
 

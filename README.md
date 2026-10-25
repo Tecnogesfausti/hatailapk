@@ -6,15 +6,34 @@ Al reabrir, continuar en el hogar seleccionado como en Companion, tras comprobar
 
 ## Estado actual
 
-Primera base de desarrollo, **todavía sin APK instalable ni conexión VPN integrada**:
+Primera **APK experimental para Casa**, con Companion y el motor Tailscale integrado. Sol permanece deshabilitado en esta prueba:
 
 - `connection-core/`: máquina de estados Kotlin; exige verificar perfil Tailscale, tailnet y servidor HA antes de autorizar la navegación.
 - `selector-ui/`: biblioteca Android con Casa/Sol cuando no hay hogar seleccionado, progreso, errores y reintento. Textos en español e inglés; el host gestionará Atrás.
 - `upstream/`: tres submódulos con las fuentes originales fijadas en `upstream.lock.json`; conservan sus historiales y licencias.
 - `tools/`: preparación y comprobación de fuentes, y alternativa de pruebas sin Gradle.
 - `.github/workflows/verify.yml`: pruebas, compilación de biblioteca y comprobación de versiones upstream.
+- `integration/`: adaptador nativo Casa, pantalla Compose y ajustes de compilación del cliente Tailscale como biblioteca.
+- `.integration/`: worktrees generados y resultados locales, excluidos de Git; las fuentes fijadas en `upstream/` permanecen intactas.
 
-La vista y el núcleo aún deben conectarse al servicio VPN y a Companion. No se simula una conexión satisfactoria. Las notificaciones simultáneas de ambas viviendas siguen pendientes de una solución y pruebas reales.
+El cliente integrado tiene su propio almacén seguro: requiere iniciar sesión en Tailscale y asociar su cuenta con Casa. Companion se registra con la URL privada del HA. Las notificaciones importantes y la entrega desde ambas viviendas necesitan pruebas específicas antes de considerar esta versión de uso habitual.
+
+## Compilar la APK Casa
+
+Con JDK 21 y Android SDK configurados:
+
+```sh
+python3 tools/upstreams.py bootstrap
+ANDROID_HOME=/home/estudio/android/sdk ./tools/build-integrated.sh
+```
+
+El script genera `dist/hatailapk-casa-debug.apk` para ARM64. Descarga las herramientas requeridas por los originales (incluidos Gradle, Go, SDK/NDK y CMake). La primera compilación tarda más que las siguientes. Los locks de las dependencias de la integración se regeneran en los worktrees experimentales con `--write-locks`; revisar y fijar su conjunto antes de una distribución estable.
+
+Esta APK usa el paquete `es.tecnogesfausti.hatailapk.minimal.debug` y no sustituye las aplicaciones oficiales. La variante minimal no utiliza FCM ni credenciales Google Services. Para instalar en un teléfono autorizado:
+
+```sh
+adb -s SERIAL install --user 0 -r dist/hatailapk-casa-debug.apk
+```
 
 ## Preparar las fuentes
 
@@ -30,7 +49,7 @@ Para una copia sin submódulos descargados:
 python3 tools/upstreams.py bootstrap
 ```
 
-El script verifica origen, commit y ausencia de cambios locales. Rechaza sobrescribir trabajo existente. Los proyectos originales se compilan con sus propias herramientas; estos comandos preparan sus fuentes, no integran todavía la APK.
+El script verifica origen, commit y ausencia de cambios locales. Rechaza sobrescribir trabajo existente. `build-integrated.sh` prepara copias de trabajo separadas para aplicar los cambios propios.
 
 ## Compilar y probar los módulos propios
 
@@ -45,14 +64,13 @@ El segundo comando produce una biblioteca `.aar`, no una APK. Las herramientas d
 
 ## Configuración y siguientes pasos
 
-`config/homes.example.json` describe los datos que deberá guardar el onboarding: servidor Companion, URL privada, perfil Tailscale y sufijo de tailnet. Es un ejemplo de contrato, aún sin importador. No introduzcas contraseñas ni tokens en ese archivo.
+`config/homes.example.json` describe el contrato general Casa/Sol, aún sin importador. El prototipo Casa obtiene el perfil y la tailnet del motor real y guarda sus referencias cifradas. No introduzcas contraseñas ni tokens en los archivos del repositorio.
 
 Orden de implementación:
 
-1. Adaptar el motor Go y el único `VpnService` al proceso de Companion.
-2. Añadir autenticación y asociación de perfiles Casa/Sol.
-3. Conectar los efectos del núcleo y el selector al arranque de Companion.
-4. Verificar reconexión, segundo plano y notificaciones en un teléfono real.
+1. Completar las pruebas reales de Casa, reapertura, Atrás y reconexión.
+2. Unificar el adaptador experimental con todos los efectos del núcleo general y habilitar Sol con sus propios datos.
+3. Verificar segundo plano, notificaciones y entrega desde el hogar inactivo.
 
 Consulta [arquitectura](docs/architecture.md), [actualizaciones upstream](docs/upstream-maintenance.md) y [plan de validación](docs/validation.md).
 

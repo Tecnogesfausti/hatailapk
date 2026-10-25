@@ -13,3 +13,5 @@
 /.git-local/
 __pycache__/
 *.pyc
+/.integration/
+/dist/

@@ -11,7 +11,7 @@ Las tres fuentes están fijadas por commit completo en los submódulos y en `ups
 5. Actualizar los SHA de `upstream.lock.json` y registrar los gitlinks con `git add upstream/ upstream.lock.json` desde la raíz. No editar fuentes upstream sin preservar sus parches en el repositorio propio.
 6. Ejecutar `python3 tools/upstreams.py verify`, las pruebas del núcleo, compilación/lint de la biblioteca y, cuando exista, compilación de la APK integrada. Probar la matriz de teléfono real antes de publicar.
 
-La CI comprueba que los submódulos coinciden con el lock y que el motor corresponde al cliente Android. No incorpora actualizaciones automáticamente ni demuestra compatibilidad funcional con una APK aún pendiente.
+La CI comprueba los módulos propios, que los submódulos coinciden con el lock y que el motor corresponde al cliente Android. La APK experimental se valida con `tools/build-integrated.sh` y las pruebas del teléfono. Las actualizaciones upstream requieren revisión e integración explícitas.
 
 ## Cambios propios en los forks
 

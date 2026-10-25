@@ -1,0 +1,13 @@
+<resources>
+    <string name="hatail_title">HATailAPK · Casa test</string>
+    <string name="hatail_casa">Conectar a Casa</string>
+    <string name="hatail_sol_pending">Sol · pendiente de configurar</string>
+    <string name="hatail_account_help">First, sign in to Casa in the embedded Tailscale client. Return here with Back and associate that account. The installed official client uses a separate secure store.</string>
+    <string name="hatail_account">Sign in to Tailscale</string>
+    <string name="hatail_bind">Associate the current account with Casa</string>
+    <string name="hatail_private_url_help">The Casa VPN is verified. Set up Home Assistant using its private Tailscale URL (100.x.x.x or the tailnet’s .ts.net hostname), rather than Cloudflare. Sign in through the genuine Companion setup. Back leaves Casa and disconnects its VPN.</string>
+    <string name="hatail_setup_ha">Set up Home Assistant Casa</string>
+    <string name="hatail_working">Verifying account, tailnet and connection…</string>
+    <string name="hatail_error">Connection could not be verified. Check the selected Tailscale account, authorization and private Home Assistant URL. Retry, or use Back to leave Casa.</string>
+    <string name="hatail_retry">Retry</string>
+</resources>

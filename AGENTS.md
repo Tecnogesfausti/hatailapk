@@ -23,7 +23,7 @@ El acceso al panel no demuestra que funcionen las notificaciones. Definir y prob
 
 ## Estructura y actualizaciones upstream
 
-`connection-core/` contiene los estados de conexión; `selector-ui/`, la vista Android. `upstream/` referencia Companion, el cliente Tailscale Android y su motor Go como submódulos fijados en `upstream.lock.json`. Conservar sus estructuras y licencias. La integración VPN/Companion y la APK siguen pendientes.
+`connection-core/` contiene estados y validación de direcciones; `selector-ui/`, la biblioteca inicial. `integration/` implementa la primera APK Casa con Companion y Tailscale. Sol sigue pendiente. `upstream/` referencia los originales fijados en `upstream.lock.json`; no modificarlos. Generar worktrees separados con `tools/prepare-integrated.py`.
 
 Aislar cambios propios y documentar la sincronización. Revisar conflictos y ejecutar verificaciones antes de actualizar.
 
@@ -31,10 +31,12 @@ Aislar cambios propios y documentar la sincronización. Revisar conflictos y eje
 
 Ejecutar `./gradlew :connection-core:test` y `./gradlew :selector-ui:assembleDebug :selector-ui:lintDebug`. Verificar fuentes con `python3 tools/upstreams.py verify`. Consultar `README.md` y `docs/` para requisitos y mantenimiento. Seguir las convenciones de cada upstream y el estilo oficial Kotlin.
 
+Compilar la APK con `ANDROID_HOME=/ruta/sdk ./tools/build-integrated.sh`. El prototipo exige un alta Companion completa antes de verificar HA y restringe HTTP privado a la VPN; no interrumpir el registro OAuth al aparecer una fila temporal.
+
 Probar Casa/Sol, autenticación caducada, cambio de perfil, HA inaccesible, reconexión y notificaciones. Añadir regresiones para errores corregidos.
 
 ## Contribuciones y seguridad
 
-Usar commits imperativos y PR con objetivo, incidencias vinculadas, verificaciones y capturas para cambios visuales. No hay historial local verificable.
+Usar commits imperativos y PR con objetivo, incidencias vinculadas, verificaciones y capturas para cambios visuales.
 
 Nunca guardar tokens HA, claves Tailscale ni credenciales en Git. Proporcionar ejemplos sin secretos y proteger las credenciales locales con mecanismos seguros de Android.
