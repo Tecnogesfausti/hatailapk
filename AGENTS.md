@@ -2,7 +2,7 @@
 
 ## Objetivo fundamental
 
-Crear **HATailAPK**, una única APK Android que combine un fork de [Home Assistant Companion](https://github.com/home-assistant/android) con [Tailscale](https://github.com/tailscale/tailscale). El repositorio de destino previsto es [Tecnogesfausti/hatailapk](https://github.com/Tecnogesfausti/hatailapk.git).
+Crear **HATailAPK**, una única APK Android que combine un fork de [Home Assistant Companion](https://github.com/home-assistant/android) con [Tailscale](https://github.com/tailscale/tailscale). Repositorio principal: [Tecnogesfausti/hatailapk](https://github.com/Tecnogesfausti/hatailapk.git).
 
 La aplicación debe acceder a dos viviendas, **Casa** y **Sol**, cada una con su Home Assistant y su tailnet correspondiente. El objetivo es evitar depender de Cloudflare para el acceso, ante los bloqueos experimentados durante partidos de fútbol, y recuperar la recepción fiable de notificaciones importantes.
 
