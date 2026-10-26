@@ -2,17 +2,17 @@
 
 ## Decisión inicial
 
-Una aplicación, un servicio VPN y dos perfiles persistentes. Android admite un único `VpnService` activo por usuario/perfil: [documentación oficial](https://developer.android.com/develop/connectivity/vpn). No se ejecutarán dos clientes Android paralelos.
+Una aplicación, un servicio VPN y dos viviendas persistentes. Android admite un único `VpnService` activo por usuario/perfil: [documentación oficial](https://developer.android.com/develop/connectivity/vpn). La prueba en el teléfono confirmó que los dos servidores HA son accesibles con la misma tailnet; el adaptador usa una sola identidad Tailscale y dos registros Companion independientes.
 
 La raíz contiene la integración propia y referencias Git a los originales. `upstream/home-assistant-android` aporta Companion; `upstream/tailscale-android`, la adaptación Android/Go; `upstream/tailscale` fija el motor compatible. `tools/prepare-integrated.py` genera worktrees en `.integration/`, convierte el cliente Android en biblioteca y permite que la aplicación Hilt de Companion herede la inicialización Tailscale.
 
-## Prototipo instalado de Casa
+## Adaptador Casa/Sol
 
-`integration/companion/` contiene la pantalla Compose y un adaptador real para la primera vivienda. Usa las APIs internas del cliente Tailscale, verifica perfil/tailnet/servicio y conserva la selección cifrada. Companion mantiene su autenticación, registro y frontend originales, con un paquete propio para coexistir con las aplicaciones oficiales.
+`integration/companion/` contiene la pantalla Compose y un adaptador real. Usa las APIs internas del cliente Tailscale, verifica perfil/tailnet/servicio y conserva la selección cifrada. Casa conserva su registro; Sol guarda otra URL e ID de servidor. Companion mantiene autenticación, registro y frontend originales, con un paquete propio para coexistir con las aplicaciones oficiales.
 
 El registro inicial crea una fila OAuth antes de tener un webhook. `HatailHomeAssistantRepository` espera un registro completo antes de consultar `getConfig`; los eventos de base de datos no deben cancelar ese alta intermedia. Solo después de la consulta autenticada se fija el servidor. La URL privada se asocia a la VPN como dirección interna; HTTP fuera de la red interna y las rutas cloud quedan deshabilitados.
 
-El adaptador Casa aún debe unificarse con todos los efectos de `ConnectionMachine` antes de habilitar Sol. Las pruebas del núcleo no sustituyen las pruebas del adaptador ni del teléfono.
+El adaptador aún debe unificarse con todos los efectos de `ConnectionMachine`. Las pruebas del núcleo no sustituyen las pruebas del adaptador ni del teléfono. Antes de mostrar el panel, activa el servidor HA registrado de la vivienda elegida y crea una navegación nueva para evitar mostrar el panel anterior.
 
 ## Cambio de vivienda
 
@@ -40,7 +40,7 @@ stateDiagram-v2
 
 `ConnectionMachine` produce estados y efectos sin acceso a red. `HomeSelectorView` representa esos estados y comunica la elección al host. No contiene un cliente VPN ficticio ni abre un navegador externo.
 
-Cada perfil relaciona `HomeId`, ID de login Tailscale, sufijo MagicDNS, URL HA y referencia a un servidor registrado en Companion. El ID HA es una referencia local, no una identidad criptográfica: la comprobación real debe usar el cliente autenticado de esa instancia y la ruta VPN seleccionada. Un HTTP 200 no basta. No seguir redirecciones hacia destinos distintos ni volver automáticamente a Cloudflare.
+Cada vivienda relaciona `HomeId`, ID de login Tailscale, sufijo MagicDNS, URL HA y referencia a un servidor registrado en Companion. En la instalación probada, ambas referencias Tailscale apuntan al mismo perfil. El ID HA es una referencia local, no una identidad criptográfica: la comprobación real debe usar el cliente autenticado de esa instancia y la ruta VPN seleccionada. Un HTTP 200 no basta. No seguir redirecciones hacia destinos distintos ni volver automáticamente a Cloudflare.
 
 ## Contrato obligatorio del adaptador pendiente
 
@@ -59,6 +59,6 @@ El cliente upstream expone `profiles`, `currentProfile`, `switchProfile` y `stat
 
 ## Notificaciones
 
-Una sola tailnet activa no proporciona automáticamente transporte local desde la otra. Evaluar el transporte push disponible en el fork y, si resulta necesario, una topología que permita alcanzar ambos HA desde una sola tailnet. Esa alternativa requiere una decisión del propietario y no cambia por defecto la separación Casa/Sol.
+Ambos HA responden desde la misma tailnet en la prueba del teléfono, pero eso no demuestra la entrega de alertas con pantalla apagada. Evaluar el transporte push disponible en la variante minimal, el comportamiento en segundo plano y los cambios de red. Atrás detiene la VPN por requisito de navegación; las alertas locales de ambas viviendas pueden quedar interrumpidas hasta volver a entrar.
 
 No realizar rotaciones periódicas de VPN como sustituto de alertas fiables. Las credenciales y las claves quedan en los almacenes seguros de los clientes; no en el modelo ni en el JSON de ejemplo. La distribución de una APK propia también requiere resolver firma, identidad de aplicación y credenciales push propias cuando correspondan.

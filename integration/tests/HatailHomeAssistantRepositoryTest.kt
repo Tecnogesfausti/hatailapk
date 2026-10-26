@@ -73,4 +73,27 @@ class HatailHomeAssistantRepositoryTest {
         assertTrue(rejected)
         coVerify(exactly = 0) { manager.activateServer(any()) }
     }
+
+    @Test fun `Sol requires its own URL before selecting a registered server`() = runTest {
+        val casa = pending.copy(connection = pending.connection.copy(webhookId = "casa-webhook"))
+        coEvery { manager.servers() } returns listOf(casa)
+        assertNull(repository.verify(null, null, "shared.ts.net", allowSingleUnbound = false))
+        coVerify(exactly = 0) { manager.activateServer(any()) }
+    }
+
+    @Test fun `two homes on one tailnet activate only the matching server`() = runTest {
+        val casa = pending.copy(connection = pending.connection.copy(webhookId = "casa-webhook"))
+        val sol = pending.copy(
+            id = 2,
+            _name = "Sol",
+            connection = pending.connection.copy(externalUrl = "http://100.64.0.20:8123", webhookId = "sol-webhook"),
+        )
+        coEvery { manager.servers() } returns listOf(casa, sol)
+        coEvery { manager.integrationRepository(2) } returns integration
+        val selected = repository.verify(null, null, "shared.ts.net", "${sol.connection.externalUrl}/", allowSingleUnbound = false)
+        assertEquals(2, selected?.id)
+        coVerify(exactly = 1) { manager.activateServer(2) }
+        coVerify(exactly = 0) { manager.activateServer(1) }
+        coVerify(exactly = 1) { integration.getConfig() }
+    }
 }

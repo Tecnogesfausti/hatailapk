@@ -6,19 +6,19 @@ Al reabrir, continuar en el hogar seleccionado como en Companion, tras comprobar
 
 ## Estado actual
 
-Primera **APK experimental para Casa**, con Companion y el motor Tailscale integrado. Sol permanece deshabilitado en esta prueba:
+**APK experimental para Casa y Sol**, con Companion y el motor Tailscale integrado. En la prueba de octubre de 2026, los dos Home Assistant respondieron desde el mismo móvil con una sola tailnet activa. Sol requiere un alta inicial propia en Companion:
 
 - `connection-core/`: máquina de estados Kotlin; exige verificar perfil Tailscale, tailnet y servidor HA antes de autorizar la navegación.
 - `selector-ui/`: biblioteca Android con Casa/Sol cuando no hay hogar seleccionado, progreso, errores y reintento. Textos en español e inglés; el host gestionará Atrás.
 - `upstream/`: tres submódulos con las fuentes originales fijadas en `upstream.lock.json`; conservan sus historiales y licencias.
 - `tools/`: preparación y comprobación de fuentes, y alternativa de pruebas sin Gradle.
 - `.github/workflows/verify.yml`: pruebas, compilación de biblioteca y comprobación de versiones upstream.
-- `integration/`: adaptador nativo Casa, pantalla Compose y ajustes de compilación del cliente Tailscale como biblioteca.
+- `integration/`: adaptador nativo de las dos viviendas, pantalla Compose y ajustes de compilación del cliente Tailscale como biblioteca.
 - `.integration/`: worktrees generados y resultados locales, excluidos de Git; las fuentes fijadas en `upstream/` permanecen intactas.
 
-El cliente integrado tiene su propio almacén seguro: requiere iniciar sesión en Tailscale y asociar su cuenta con Casa. Companion se registra con la URL privada del HA. Las notificaciones importantes y la entrega desde ambas viviendas necesitan pruebas específicas antes de considerar esta versión de uso habitual.
+El cliente integrado tiene su propio almacén seguro. Casa conserva su registro actual; Sol pide una vez la URL privada de su HA y su autenticación, y después aparece como acceso directo en el selector. Cada vivienda conserva su identificador de servidor y registro Companion. Atrás desconecta la VPN antes de volver al selector. Las notificaciones importantes y la entrega desde ambas viviendas necesitan pruebas específicas antes de considerar esta versión de uso habitual.
 
-## Compilar la APK Casa
+## Compilar la APK
 
 Con JDK 21 y Android SDK configurados:
 
@@ -27,7 +27,7 @@ python3 tools/upstreams.py bootstrap
 ANDROID_HOME=/home/estudio/android/sdk ./tools/build-integrated.sh
 ```
 
-El script genera `dist/hatailapk-casa-debug.apk` para ARM64. Descarga las herramientas requeridas por los originales (incluidos Gradle, Go, SDK/NDK y CMake). La primera compilación tarda más que las siguientes. Los locks de las dependencias de la integración se regeneran en los worktrees experimentales con `--write-locks`; revisar y fijar su conjunto antes de una distribución estable.
+El script genera `dist/hatailapk-casa-debug.apk` para ARM64 (nombre del artefacto conservado durante la transición a dos viviendas). Descarga las herramientas requeridas por los originales (incluidos Gradle, Go, SDK/NDK y CMake). La primera compilación tarda más que las siguientes. Los locks de las dependencias de la integración se regeneran en los worktrees experimentales con `--write-locks`; revisar y fijar su conjunto antes de una distribución estable.
 
 Esta APK usa el paquete `es.tecnogesfausti.hatailapk.minimal.debug` y no sustituye las aplicaciones oficiales. La variante minimal no utiliza FCM ni credenciales Google Services. Para instalar en un teléfono autorizado:
 
@@ -64,13 +64,13 @@ El segundo comando produce una biblioteca `.aar`, no una APK. Las herramientas d
 
 ## Configuración y siguientes pasos
 
-`config/homes.example.json` describe el contrato general Casa/Sol, aún sin importador. El prototipo Casa obtiene el perfil y la tailnet del motor real y guarda sus referencias cifradas. No introduzcas contraseñas ni tokens en los archivos del repositorio.
+`config/homes.example.json` describe el contrato general Casa/Sol, aún sin importador. El adaptador obtiene el perfil y la tailnet del motor real y guarda sus referencias cifradas. Sol usa la misma tailnet verificada en esta instalación, pero un servidor HA y un alta Companion distintos. No introduzcas contraseñas ni tokens en los archivos del repositorio.
 
 Orden de implementación:
 
-1. Completar las pruebas reales de Casa, reapertura, Atrás y reconexión.
-2. Unificar el adaptador experimental con todos los efectos del núcleo general y habilitar Sol con sus propios datos.
-3. Verificar segundo plano, notificaciones y entrega desde el hogar inactivo.
+1. Completar la prueba real de Sol, el cambio Casa/Sol y la reapertura en ambos hogares.
+2. Unificar el adaptador experimental con todos los efectos del núcleo general.
+3. Verificar segundo plano, notificaciones y entrega desde ambos hogares.
 
 Consulta [arquitectura](docs/architecture.md), [actualizaciones upstream](docs/upstream-maintenance.md) y [plan de validación](docs/validation.md).
 

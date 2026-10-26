@@ -10,6 +10,8 @@ import com.tailscale.ipn.ui.model.IpnLocal
 import com.tailscale.ipn.ui.model.IpnState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.homeassistant.companion.android.common.data.servers.ServerManager
+import es.tecnogesfausti.hatail.core.TailnetAddressPolicy
+import java.net.URI
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -38,15 +40,22 @@ private const val KEY_PROFILE = "hatail.casa.profile"
 private const val KEY_TAILNET = "hatail.casa.tailnet"
 private const val KEY_SERVER = "hatail.casa.server"
 private const val KEY_SERVER_URL = "hatail.casa.server_url"
+private const val KEY_HOME = "hatail.selected_home"
+private const val KEY_SOL_URL = "hatail.sol.expected_url"
+private const val KEY_SOL_SERVER = "hatail.sol.server"
+private const val KEY_SOL_SERVER_URL = "hatail.sol.server_url"
+private const val KEY_ONBOARDING_HOME = "hatail.onboarding_home"
+
+internal enum class Home { CASA, SOL }
 
 internal sealed interface GateState {
     data object Loading : GateState
     data object Choose : GateState
     data object Account : GateState
     data object Permission : GateState
-    data object SetupHomeAssistant : GateState
-    data object Onboarding : GateState
-    data object Connected : GateState
+    data class SetupHomeAssistant(val home: Home, val savedUrl: String? = null) : GateState
+    data class Onboarding(val home: Home, val url: String? = null) : GateState
+    data class Connected(val home: Home) : GateState
     data object Error : GateState
 }
 
@@ -56,7 +65,7 @@ object HatailAccess {
         internal set
 }
 
-/** First real-device slice: one Casa account, the embedded VPN and the genuine Companion UI. */
+/** One verified tailnet, two independently bound Companion server registrations. */
 @HiltViewModel
 internal class HatailGateViewModel @Inject constructor(
     private val servers: ServerManager,
@@ -72,9 +81,7 @@ internal class HatailGateViewModel @Inject constructor(
         refresh()
         viewModelScope.launch {
             servers.serversFlow.collect { registered ->
-                if (registered.any { it.connection.isRegistered } &&
-                    mutableState.value in setOf(GateState.Onboarding, GateState.Connected)
-                ) {
+                if (registered.any { it.connection.isRegistered } && isShowingHome()) {
                     refresh()
                 }
             }
@@ -82,7 +89,7 @@ internal class HatailGateViewModel @Inject constructor(
         viewModelScope.launch {
             while (true) {
                 delay(MONITOR_MS)
-                if (mutableState.value in setOf(GateState.Connected, GateState.Onboarding)) {
+                if (isShowingHome()) {
                     try {
                         if (!matchesBinding()) refresh()
                     } catch (cancelled: CancellationException) {
@@ -96,7 +103,7 @@ internal class HatailGateViewModel @Inject constructor(
         }
         viewModelScope.launch {
             app.getAppScopedViewModel().vpnActive.collect { active ->
-                if (!active && mutableState.value in setOf(GateState.Connected, GateState.Onboarding)) {
+                if (!active && isShowingHome()) {
                     HatailAccess.allowed = false
                     mutableState.value = GateState.Loading
                     refresh()
@@ -108,13 +115,20 @@ internal class HatailGateViewModel @Inject constructor(
     /** Revalidate a foreground session without stopping a correctly running VPN. */
     fun refresh() = runOperation { connectSelected() }
 
-    /** Persist the selected home before starting initial account setup. */
-    fun selectCasa() = runOperation {
-        edit { putBoolean(KEY_SELECTED, true) }
+    private fun isShowingHome() = mutableState.value is GateState.Connected || mutableState.value is GateState.Onboarding
+
+    /** The old Casa flag remains readable so an installed Casa session survives this update. */
+    fun selectHome(home: Home) = runOperation {
+        HatailAccess.allowed = false
+        mutableState.value = GateState.Loading
+        edit {
+            putString(KEY_HOME, home.name)
+            putBoolean(KEY_SELECTED, home == Home.CASA)
+        }
         connectSelected()
     }
 
-    /** Associate Casa with the account actually observed in this APK's native backend. */
+    /** Associate the shared tailnet with the account actually observed in this APK. */
     fun bindCurrentAccount() = runOperation {
         val profile = currentProfile()
         val suffix = status().CurrentTailnet?.MagicDNSSuffix.orEmpty()
@@ -126,10 +140,26 @@ internal class HatailGateViewModel @Inject constructor(
         connectSelected()
     }
 
-    /** Continue the one-time Companion registration over the verified Casa VPN. */
+    /** Continue Casa's one-time Companion registration over the verified VPN. */
     fun onboard() {
         HatailAccess.allowed = true
-        mutableState.value = GateState.Onboarding
+        mutableState.value = GateState.Onboarding(Home.CASA)
+    }
+
+    /** Save Sol's private address before opening Companion's second-server registration. */
+    fun onboardSol(rawUrl: String, openRegistration: (String) -> Unit) = runOperation {
+        require(selectedHome() == Home.SOL)
+        val url = URI(rawUrl.trim()).normalize()
+        val tailnet = requireNotNull(read { getString(KEY_TAILNET, null) })
+        require(TailnetAddressPolicy.accepts(url, tailnet))
+        require(read { getString(KEY_SERVER_URL, null) }?.let { sameHomeAssistantEndpoint(url, URI(it)) } != true)
+        edit {
+            putString(KEY_SOL_URL, url.toString())
+            putString(KEY_ONBOARDING_HOME, Home.SOL.name)
+        }
+        HatailAccess.allowed = true
+        mutableState.value = GateState.Onboarding(Home.SOL, url.toString())
+        openRegistration(url.toString())
     }
 
     /** Handle the Android VPN consent result. Denial keeps Casa selected for retry. */
@@ -138,12 +168,16 @@ internal class HatailGateViewModel @Inject constructor(
         if (granted) refresh() else mutableState.value = GateState.Error
     }
 
-    /** System Back leaves Casa; foreground/background lifecycle events do not call this. */
+    /** System Back leaves the selected home; background lifecycle events do not call this. */
     fun exitHome() {
         HatailAccess.allowed = false
         mutableState.value = GateState.Loading
         runOperation {
-            edit { putBoolean(KEY_SELECTED, false) }
+            edit {
+                putBoolean(KEY_SELECTED, false)
+                remove(KEY_HOME)
+                remove(KEY_ONBOARDING_HOME)
+            }
             servers.servers().forEach { servers.webSocketRepository(it.id).shutdown() }
             stopTunnel()
             mutableState.value = GateState.Choose
@@ -167,7 +201,8 @@ internal class HatailGateViewModel @Inject constructor(
     }
 
     private suspend fun connectSelected() {
-        if (!read { getBoolean(KEY_SELECTED, false) }) {
+        val home = selectedHome()
+        if (home == null) {
             HatailAccess.allowed = false
             stopTunnel()
             mutableState.value = GateState.Choose
@@ -186,7 +221,12 @@ internal class HatailGateViewModel @Inject constructor(
             mutableState.value = GateState.Loading
             activateBoundProfile()
         }
-        verifyHomeAssistant()
+        verifyHomeAssistant(home)
+    }
+
+    private suspend fun selectedHome(): Home? = read {
+        getString(KEY_HOME, null)?.let(Home::valueOf)
+            ?: if (getBoolean(KEY_SELECTED, false)) Home.CASA else null
     }
 
     private suspend fun activateBoundProfile() {
@@ -222,23 +262,34 @@ internal class HatailGateViewModel @Inject constructor(
             observed.CurrentTailnet?.MagicDNSSuffix?.trimEnd('.')?.equals(expectedDns.trimEnd('.'), true) == true
     }
 
-    private suspend fun verifyHomeAssistant() {
+    private suspend fun verifyHomeAssistant(home: Home) {
+        val boundIdKey = if (home == Home.CASA) KEY_SERVER else KEY_SOL_SERVER
+        val boundUrlKey = if (home == Home.CASA) KEY_SERVER_URL else KEY_SOL_SERVER_URL
         val server = homeAssistant.verify(
-            read { getInt(KEY_SERVER, -1) }.takeIf { it >= 0 },
-            read { getString(KEY_SERVER_URL, null) },
+            read { getInt(boundIdKey, -1) }.takeIf { it >= 0 },
+            read { getString(boundUrlKey, null) },
             requireNotNull(read { getString(KEY_TAILNET, null) }),
+            if (home == Home.SOL) read { getString(KEY_SOL_URL, null) } else null,
+            allowSingleUnbound = home == Home.CASA,
         )
         if (server == null) {
-            if (mutableState.value != GateState.Onboarding) mutableState.value = GateState.SetupHomeAssistant
+            val onboarding = read { getString(KEY_ONBOARDING_HOME, null) } == home.name
+            HatailAccess.allowed = onboarding
+            mutableState.value = if (onboarding) {
+                GateState.Onboarding(home, if (home == Home.SOL) read { getString(KEY_SOL_URL, null) } else null)
+            } else {
+                GateState.SetupHomeAssistant(home, if (home == Home.SOL) read { getString(KEY_SOL_URL, null) } else null)
+            }
             return
         }
         require(matchesBinding())
         edit {
-            putInt(KEY_SERVER, server.id)
-            putString(KEY_SERVER_URL, server.connection.externalUrl)
+            putInt(boundIdKey, server.id)
+            putString(boundUrlKey, server.connection.externalUrl)
+            remove(KEY_ONBOARDING_HOME)
         }
         HatailAccess.allowed = true
-        mutableState.value = GateState.Connected
+        mutableState.value = GateState.Connected(home)
     }
 
     private suspend fun currentProfile() = request<IpnLocal.LoginProfile> { client.currentProfile(it) }

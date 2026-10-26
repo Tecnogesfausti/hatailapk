@@ -12,16 +12,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.activity.compose.LocalActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -31,6 +36,10 @@ import io.homeassistant.companion.android.common.R
 import io.homeassistant.companion.android.common.compose.composable.HAAccentButton
 import io.homeassistant.companion.android.common.compose.theme.HADimens
 import io.homeassistant.companion.android.common.compose.theme.HATheme
+import io.homeassistant.companion.android.launch.LaunchActivity
+
+private const val RENDERED_HOME_EXTRA = "hatail.rendered_home"
+private const val ONBOARDING_URL_EXTRA = "hatail.onboarding_url"
 
 /** Explicit exit action shared with Companion's frontend Back handler. */
 val LocalHatailExit = staticCompositionLocalOf<() -> Unit> { {} }
@@ -41,6 +50,7 @@ fun HatailGate(content: @Composable () -> Unit) {
     val model: HatailGateViewModel = hiltViewModel()
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val activity = LocalActivity.current
     val owner = LocalLifecycleOwner.current
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         model.permissionResult(it.resultCode == Activity.RESULT_OK)
@@ -57,20 +67,65 @@ fun HatailGate(content: @Composable () -> Unit) {
             val intent = VpnService.prepare(context)
             if (intent == null) model.permissionResult(true) else permission.launch(intent)
         }
+        val connected = state as? GateState.Connected
+        if (connected != null && activity?.intent?.getStringExtra(RENDERED_HOME_EXTRA) != connected.home.name) {
+            // A fresh navigation graph is required after activating a different Companion server.
+            activity?.startActivity(
+                LaunchActivity.newInstance(context).apply {
+                    putExtra(RENDERED_HOME_EXTRA, connected.home.name)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                },
+            )
+            activity?.finish()
+        }
+        val onboarding = state as? GateState.Onboarding
+        if (onboarding?.home == Home.SOL &&
+            activity?.intent?.getStringExtra(ONBOARDING_URL_EXTRA) != onboarding.url
+        ) {
+            val url = requireNotNull(onboarding.url)
+            activity?.startActivity(solOnboardingIntent(context, url))
+            activity?.finish()
+        }
     }
-    if (state == GateState.Connected || state == GateState.Onboarding) {
+    val currentState = state
+    val contentReady = when (currentState) {
+        is GateState.Connected -> activity?.intent?.getStringExtra(RENDERED_HOME_EXTRA) == currentState.home.name
+        is GateState.Onboarding -> currentState.home == Home.CASA ||
+            activity?.intent?.getStringExtra(ONBOARDING_URL_EXTRA) == currentState.url
+        else -> false
+    }
+    if (contentReady) {
         CompositionLocalProvider(LocalHatailExit provides model::exitHome) { content() }
     } else {
         HATheme {
-            GateContent(state, model, onAccount = { context.startActivity(Intent(context, MainActivity::class.java)) })
+            GateContent(
+                state,
+                model,
+                onAccount = { context.startActivity(Intent(context, MainActivity::class.java)) },
+                onSolRegistration = { url ->
+                    activity?.startActivity(solOnboardingIntent(context, url))
+                    activity?.finish()
+                },
+            )
         }
     }
     // Registered after the frontend: an explicit Back leaves the home and its VPN.
     BackHandler(enabled = state != GateState.Choose) { model.exitHome() }
 }
 
+private fun solOnboardingIntent(context: android.content.Context, url: String): Intent =
+    LaunchActivity.newInstance(
+        context,
+        LaunchActivity.DeepLink.OpenOnboarding(url, hideExistingServers = true, skipWelcome = true),
+    ).putExtra(ONBOARDING_URL_EXTRA, url)
+
 @Composable
-private fun GateContent(state: GateState, model: HatailGateViewModel, onAccount: () -> Unit) {
+private fun GateContent(
+    state: GateState,
+    model: HatailGateViewModel,
+    onAccount: () -> Unit,
+    onSolRegistration: (String) -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(HADimens.SPACE6),
         verticalArrangement = Arrangement.spacedBy(HADimens.SPACE4),
@@ -78,17 +133,33 @@ private fun GateContent(state: GateState, model: HatailGateViewModel, onAccount:
         Text(stringResource(R.string.hatail_title))
         when (state) {
             GateState.Choose -> {
-                HAAccentButton(stringResource(R.string.hatail_casa), model::selectCasa)
-                HAAccentButton(stringResource(R.string.hatail_sol_pending), {}, enabled = false)
+                HAAccentButton(stringResource(R.string.hatail_casa), { model.selectHome(Home.CASA) })
+                HAAccentButton(stringResource(R.string.hatail_sol), { model.selectHome(Home.SOL) })
             }
             GateState.Account -> {
                 Text(stringResource(R.string.hatail_account_help))
                 HAAccentButton(stringResource(R.string.hatail_account), onAccount)
                 HAAccentButton(stringResource(R.string.hatail_bind), model::bindCurrentAccount)
             }
-            GateState.SetupHomeAssistant -> {
-                Text(stringResource(R.string.hatail_private_url_help))
-                HAAccentButton(stringResource(R.string.hatail_setup_ha), model::onboard)
+            is GateState.SetupHomeAssistant -> {
+                if (state.home == Home.CASA) {
+                    Text(stringResource(R.string.hatail_private_url_help))
+                    HAAccentButton(stringResource(R.string.hatail_setup_ha), model::onboard)
+                } else {
+                    var url by rememberSaveable(state.savedUrl) { mutableStateOf(state.savedUrl.orEmpty()) }
+                    Text(stringResource(R.string.hatail_sol_url_help))
+                    OutlinedTextField(
+                        value = url,
+                        onValueChange = { url = it },
+                        label = { Text(stringResource(R.string.hatail_sol_url_label)) },
+                        singleLine = true,
+                    )
+                    HAAccentButton(
+                        stringResource(R.string.hatail_setup_sol),
+                        { model.onboardSol(url, onSolRegistration) },
+                        enabled = url.isNotBlank(),
+                    )
+                }
             }
             GateState.Error -> {
                 Text(stringResource(R.string.hatail_error))

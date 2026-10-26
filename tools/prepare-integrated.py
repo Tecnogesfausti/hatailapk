@@ -126,7 +126,7 @@ tasks.matching { it.name.contains("GoogleServices") }.configureEach { enabled = 
     # Distinct launcher label and package preserve the already installed official apps.
     label = ha / "app/src/minimal/res/values/hatail.xml"
     label.parent.mkdir(parents=True, exist_ok=True)
-    label.write_text('<resources><string name="app_name">HATailAPK Casa · prueba</string></resources>\n')
+    label.write_text('<resources><string name="app_name">HATailAPK · prueba</string></resources>\n')
     print(f"Prepared integrated Companion build at {ha}")
 
 

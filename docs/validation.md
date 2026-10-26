@@ -1,5 +1,16 @@
 # Plan de validación
 
+## Selector Casa/Sol, 26 de octubre de 2026
+
+- Desde el Samsung SM-A566B, una sola conexión Tailscale devolvió HTTP 200 y la página de Home Assistant de ambos servidores privados; no se necesitaron dos VPN simultáneas.
+- La APK actualizada se instaló sobre el mismo paquete sin borrar los datos. El panel de Casa siguió abriendo por su URL privada.
+- Atrás desde Casa mostró ambos botones y detuvo el servicio VPN. Elegir Sol inició la misma identidad Tailscale y abrió el alta de su propio Home Assistant por URL privada. El usuario completó el inicio de sesión en el móvil y confirmó que veía su panel.
+- Después del alta, Sol volvió a abrirse sin repetir el inicio de sesión. Se comprobó Sol → selector → Casa → selector → Sol: Atrás detuvo el servicio VPN antes del selector y cada selección volvió a arrancarlo; los WebView activos usaron las direcciones privadas correspondientes.
+- Cinco regresiones JUnit del adaptador pasaron: OAuth incompleto, HTTP privado, vinculación fija de Casa, prohibición de elegir Sol sin URL y selección del servidor Sol entre dos registros. Los sensores de Companion usan la clave compuesta `id` + `server_id`; falta medir las actualizaciones y alertas reales de ambos servidores.
+- APK instalada: `dist/hatailapk-casa-debug.apk` (nombre heredado); SHA-256 `ba4e7f6c05fe0af9e7c83ff2926086d8c138e418db5403b2593a502459f1e075`.
+
+Pendiente: reapertura tras matar el proceso, reinicio, notificaciones y efectos de batería. El panel visible no demuestra por sí solo que las alertas lleguen.
+
 ## APK Casa instalada el 25 de octubre de 2026
 
 - APK ARM64 compilada sobre los tres commits fijados, con Companion y el motor Go integrados; firma verificada e instalación ADB correcta en Samsung SM-A566B (Android API 36).
