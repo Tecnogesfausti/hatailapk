@@ -55,7 +55,7 @@ internal sealed interface GateState {
     data object Permission : GateState
     data class SetupHomeAssistant(val home: Home, val savedUrl: String? = null) : GateState
     data class Onboarding(val home: Home, val url: String? = null) : GateState
-    data class Connected(val home: Home) : GateState
+    data class Connected(val home: Home, val serverId: Int) : GateState
     data object Error : GateState
 }
 
@@ -289,7 +289,7 @@ internal class HatailGateViewModel @Inject constructor(
             remove(KEY_ONBOARDING_HOME)
         }
         HatailAccess.allowed = true
-        mutableState.value = GateState.Connected(home)
+        mutableState.value = GateState.Connected(home, server.id)
     }
 
     private suspend fun currentProfile() = request<IpnLocal.LoginProfile> { client.currentProfile(it) }

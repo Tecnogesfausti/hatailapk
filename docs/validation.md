@@ -7,9 +7,10 @@
 - Atrás desde Casa mostró ambos botones y detuvo el servicio VPN. Elegir Sol inició la misma identidad Tailscale y abrió el alta de su propio Home Assistant por URL privada. El usuario completó el inicio de sesión en el móvil y confirmó que veía su panel.
 - Después del alta, Sol volvió a abrirse sin repetir el inicio de sesión. Se comprobó Sol → selector → Casa → selector → Sol: Atrás detuvo el servicio VPN antes del selector y cada selección volvió a arrancarlo; los WebView activos usaron las direcciones privadas correspondientes.
 - Cinco regresiones JUnit del adaptador pasaron: OAuth incompleto, HTTP privado, vinculación fija de Casa, prohibición de elegir Sol sin URL y selección del servidor Sol entre dos registros. Los sensores de Companion usan la clave compuesta `id` + `server_id`; falta medir las actualizaciones y alertas reales de ambos servidores.
-- APK instalada: `dist/hatailapk-casa-debug.apk` (nombre heredado); SHA-256 `ba4e7f6c05fe0af9e7c83ff2926086d8c138e418db5403b2593a502459f1e075`.
+- Se detectó una reapertura que mostró Casa tras haber usado Sol. La navegación de arranque se corrigió para pasar a Companion el ID del servidor ya verificado, sin depender de su selección global. Después de instalar la corrección, cerrar el proceso y reabrir restauró el servidor activo de Sol, la VPN y su URL privada; también funcionó tras desbloquear el teléfono.
+- APK instalada: `dist/hatailapk-casa-debug.apk` (nombre heredado); SHA-256 `7b380232c4b0f2678b119a34cfcfce6bc9b887fa0763fdaf38140b15d4cef726`.
 
-Pendiente: reapertura tras matar el proceso, reinicio, notificaciones y efectos de batería. El panel visible no demuestra por sí solo que las alertas lleguen.
+Pendiente: reinicio completo del teléfono, notificaciones y efectos de batería. El panel visible no demuestra por sí solo que las alertas lleguen.
 
 ## APK Casa instalada el 25 de octubre de 2026
 

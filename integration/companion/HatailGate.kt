@@ -37,8 +37,10 @@ import io.homeassistant.companion.android.common.compose.composable.HAAccentButt
 import io.homeassistant.companion.android.common.compose.theme.HADimens
 import io.homeassistant.companion.android.common.compose.theme.HATheme
 import io.homeassistant.companion.android.launch.LaunchActivity
+import io.homeassistant.companion.android.frontend.navigation.FrontendTarget
 
 private const val RENDERED_HOME_EXTRA = "hatail.rendered_home"
+private const val RENDERED_SERVER_EXTRA = "hatail.rendered_server"
 private const val ONBOARDING_URL_EXTRA = "hatail.onboarding_url"
 
 /** Explicit exit action shared with Companion's frontend Back handler. */
@@ -68,11 +70,19 @@ fun HatailGate(content: @Composable () -> Unit) {
             if (intent == null) model.permissionResult(true) else permission.launch(intent)
         }
         val connected = state as? GateState.Connected
-        if (connected != null && activity?.intent?.getStringExtra(RENDERED_HOME_EXTRA) != connected.home.name) {
+        if (connected != null && (
+                activity?.intent?.getStringExtra(RENDERED_HOME_EXTRA) != connected.home.name ||
+                    activity?.intent?.getIntExtra(RENDERED_SERVER_EXTRA, -1) != connected.serverId
+            )
+        ) {
             // A fresh navigation graph is required after activating a different Companion server.
             activity?.startActivity(
-                LaunchActivity.newInstance(context).apply {
+                LaunchActivity.newInstance(
+                    context,
+                    LaunchActivity.DeepLink.NavigateTo(FrontendTarget.Default, connected.serverId),
+                ).apply {
                     putExtra(RENDERED_HOME_EXTRA, connected.home.name)
+                    putExtra(RENDERED_SERVER_EXTRA, connected.serverId)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 },
             )
@@ -89,7 +99,9 @@ fun HatailGate(content: @Composable () -> Unit) {
     }
     val currentState = state
     val contentReady = when (currentState) {
-        is GateState.Connected -> activity?.intent?.getStringExtra(RENDERED_HOME_EXTRA) == currentState.home.name
+        is GateState.Connected ->
+            activity?.intent?.getStringExtra(RENDERED_HOME_EXTRA) == currentState.home.name &&
+                activity?.intent?.getIntExtra(RENDERED_SERVER_EXTRA, -1) == currentState.serverId
         is GateState.Onboarding -> currentState.home == Home.CASA ||
             activity?.intent?.getStringExtra(ONBOARDING_URL_EXTRA) == currentState.url
         else -> false

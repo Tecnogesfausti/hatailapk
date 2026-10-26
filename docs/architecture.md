@@ -12,7 +12,7 @@ La raíz contiene la integración propia y referencias Git a los originales. `up
 
 El registro inicial crea una fila OAuth antes de tener un webhook. `HatailHomeAssistantRepository` espera un registro completo antes de consultar `getConfig`; los eventos de base de datos no deben cancelar ese alta intermedia. Solo después de la consulta autenticada se fija el servidor. La URL privada se asocia a la VPN como dirección interna; HTTP fuera de la red interna y las rutas cloud quedan deshabilitados.
 
-El adaptador aún debe unificarse con todos los efectos de `ConnectionMachine`. Las pruebas del núcleo no sustituyen las pruebas del adaptador ni del teléfono. Antes de mostrar el panel, activa el servidor HA registrado de la vivienda elegida y crea una navegación nueva para evitar mostrar el panel anterior.
+El adaptador aún debe unificarse con todos los efectos de `ConnectionMachine`. Las pruebas del núcleo no sustituyen las pruebas del adaptador ni del teléfono. Antes de mostrar el panel, activa el servidor HA registrado de la vivienda elegida y crea una navegación nueva con su ID explícito; el arranque de Companion puede leer la selección global anterior antes de que termine la restauración.
 
 ## Cambio de vivienda
 
