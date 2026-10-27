@@ -4,6 +4,8 @@ from pathlib import Path
 from datetime import datetime, timezone
 import shutil
 import subprocess
+import json
+import re
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -45,6 +47,23 @@ def replace(path, old, new):
 def append(path, marker, content):
     existing = path.read_text()
     path.write_text(existing.split(marker, 1)[0].rstrip() + "\n\n" + marker + "\n" + content + "\n")
+
+
+def build_information():
+    lock = json.loads((ROOT / "upstream.lock.json").read_text())["sources"]
+    version_file = ROOT / "upstream/tailscale-android/tailscale.version"
+    versions = dict(re.findall(r'^([A-Z_]+)="([^"\n]*)"$', version_file.read_text(), re.M)) if version_file.exists() else {}
+    native_matches = (versions.get("VERSION_GIT_HASH") == lock["tailscale"]["commit"] and
+                      versions.get("VERSION_EXTRA_HASH") == lock["tailscale-android"]["commit"])
+    components = []
+    for name, source in lock.items():
+        repo = source["url"].removeprefix("https://github.com/").removesuffix(".git")
+        version = source.get("moduleVersion", source["commit"][:12])
+        if native_matches and name.startswith("tailscale"):
+            version = versions["VERSION_SHORT" if name == "tailscale" else "VERSION_LONG"]
+        components.append({"repository": repo, "version": version, "commit": source["commit"]})
+    revision = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "--short=12", "HEAD"], text=True).strip()
+    return {"revision": revision, "components": components}
 
 
 def main():
@@ -139,6 +158,9 @@ tasks.matching { it.name.contains("GoogleServices") }.configureEach { enabled = 
         shutil.copyfile(path, tests / path.name)
     shutil.copytree(ROOT / "connection-core/src/main/kotlin", ha / "app/src/main/kotlin", dirs_exist_ok=True)
     shutil.copyfile(ROOT / "integration/hatail-strings.xml", ha / "common/src/main/res/values/hatail.xml")
+    assets = ha / "app/src/main/assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    (assets / "hatail-build.json").write_text(json.dumps(build_information(), indent=2) + "\n")
     # Distinct launcher label and package preserve the already installed official apps.
     label = ha / "app/src/minimal/res/values/hatail.xml"
     label.parent.mkdir(parents=True, exist_ok=True)

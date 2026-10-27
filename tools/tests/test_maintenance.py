@@ -102,6 +102,30 @@ class SafeguardsTest(unittest.TestCase):
 
 
 class WorktreeTest(unittest.TestCase):
+    def test_build_information_does_not_label_new_pins_with_stale_native_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            git_root = root / "project"
+            repository(git_root)
+            lock = json.loads((TOOLS.parent / "upstream.lock.json").read_text())
+            (git_root / "upstream.lock.json").write_text(json.dumps(lock))
+            native = git_root / "upstream/tailscale-android"
+            native.mkdir(parents=True)
+            version = native / "tailscale.version"
+            version.write_text('VERSION_SHORT="wrong-old-version"\nVERSION_LONG="wrong-old-version"\n')
+            commit_file(git_root, "fixture")
+            with patch.object(prepare, "ROOT", git_root):
+                info = prepare.build_information()
+                self.assertNotIn("wrong-old-version", json.dumps(info))
+                version.write_text(
+                    f'VERSION_SHORT="1.2.3"\nVERSION_LONG="1.2.3-client"\n'
+                    f'VERSION_GIT_HASH="{lock["sources"]["tailscale"]["commit"]}"\n'
+                    f'VERSION_EXTRA_HASH="{lock["sources"]["tailscale-android"]["commit"]}"\n'
+                )
+                info = prepare.build_information()
+            self.assertEqual(info["components"][-1]["version"], "1.2.3")
+            self.assertEqual(info["components"][1]["version"], "1.2.3-client")
+
     def test_new_pin_archives_old_generated_worktree_with_local_changes(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

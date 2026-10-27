@@ -2,6 +2,8 @@
 
 El punto de entrada para el mantenedor y el agente es `python3 tools/maintain.py`. Los tres originales siguen fijados en `upstream.lock.json`. El motor Go se obtiene de `go.mod` del cliente Tailscale Android; no se elige su última versión por separado.
 
+La APK incorpora una cabecera de versiones con consulta diaria mediante WorkManager y consulta manual. `tools/prepare-integrated.py` genera `hatail-build.json` a partir de los pins y, cuando coincide con ellos, de `tailscale.version`; Companion muestra su `BuildConfig.VERSION_NAME` real. Las comparaciones guardadas se invalidan al cambiar los commits integrados. La aplicación consulta las estables de los tres proyectos en GitHub, mantiene los últimos resultados fechados y no necesita tokens ni credenciales de HA para hacerlo. «Hay novedades» significa que hay código posterior que revisar; todavía debe pasar el ensayo descrito aquí.
+
 ## Revisar novedades
 
 ```sh

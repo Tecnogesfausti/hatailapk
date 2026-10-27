@@ -32,7 +32,7 @@ TASK_GRADLE_ARGS=(
 .integration/home-assistant-android/gradlew "${TASK_GRADLE_ARGS[@]}" :app:ktlintFormat
 .integration/home-assistant-android/gradlew "${TASK_GRADLE_ARGS[@]}" \
     :app:assembleMinimalDebug :app:testMinimalDebugUnitTest \
-    --tests io.homeassistant.companion.android.hatail.HatailHomeAssistantRepositoryTest --write-locks
+    --tests 'io.homeassistant.companion.android.hatail.*' --write-locks
 cp .integration/home-assistant-android/app/build/outputs/apk/minimal/debug/app-minimal-debug.apk \
     dist/hatailapk-casa-debug.apk
 sha256sum dist/hatailapk-casa-debug.apk

@@ -78,4 +78,10 @@ Consulta [arquitectura](docs/architecture.md), [actualizaciones upstream](docs/u
 
 `python3 tools/maintain.py check` genera un informe de versiones estables sin cambiar las fuentes. `trial --name NOMBRE --build` ensaya los candidatos en una rama aislada; `build` verifica y archiva una APK de las versiones actuales. `install --dry-run` comprueba un teléfono conectado y `install` actualiza conservando los datos, después de verificar paquete, versión y certificado. El [procedimiento completo](docs/upstream-maintenance.md) incluye la revisión semanal en GitHub y las pruebas de Casa/Sol.
 
+## Versiones dentro de la APK
+
+La cabecera «Versiones y novedades» está disponible en el selector y dentro del hogar. Muestra las versiones integradas de Companion y Tailscale; al tocarla aparecen los tres componentes (Companion, cliente Tailscale Android y motor Go), sus revisiones, la última estable consultada, la fecha y un enlace a las notas de versión. Abrir o cerrar esta información conserva el hogar y la VPN.
+
+La consulta pública a GitHub se programa cada 24 horas con Internet, sujeta a los retrasos de batería de Android. Hay consulta manual con un mínimo de 15 minutos y caché sin conexión. Se compara el historial de commits: distingue una actualización posterior, una estable anterior y una rama divergente, sin confundir el número de versión con compatibilidad probada. El aviso ayuda a preparar un ensayo; la recompilación sigue realizándose en el PC. Estas versiones corresponden a la APK, no a Home Assistant Core de las viviendas.
+
 Código propio bajo Apache-2.0. Cada submódulo conserva su licencia; consulta [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

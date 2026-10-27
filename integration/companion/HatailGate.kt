@@ -4,29 +4,30 @@ import android.app.Activity
 import android.content.Intent
 import android.net.VpnService
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.Text
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.activity.compose.LocalActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -36,8 +37,8 @@ import io.homeassistant.companion.android.common.R
 import io.homeassistant.companion.android.common.compose.composable.HAAccentButton
 import io.homeassistant.companion.android.common.compose.theme.HADimens
 import io.homeassistant.companion.android.common.compose.theme.HATheme
-import io.homeassistant.companion.android.launch.LaunchActivity
 import io.homeassistant.companion.android.frontend.navigation.FrontendTarget
+import io.homeassistant.companion.android.launch.LaunchActivity
 
 private const val RENDERED_HOME_EXTRA = "hatail.rendered_home"
 private const val RENDERED_SERVER_EXTRA = "hatail.rendered_server"
@@ -50,6 +51,9 @@ val LocalHatailExit = staticCompositionLocalOf<() -> Unit> { {} }
 @Composable
 fun HatailGate(content: @Composable () -> Unit) {
     val model: HatailGateViewModel = hiltViewModel()
+    val versions: HatailVersionsViewModel = hiltViewModel()
+    val versionState by versions.state.collectAsStateWithLifecycle()
+    var showVersions by rememberSaveable { mutableStateOf(false) }
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = LocalActivity.current
@@ -59,7 +63,10 @@ fun HatailGate(content: @Composable () -> Unit) {
     }
     DisposableEffect(owner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) model.refresh()
+            if (event == Lifecycle.Event.ON_RESUME) {
+                model.refresh()
+                versions.refresh()
+            }
         }
         owner.lifecycle.addObserver(observer)
         onDispose { owner.lifecycle.removeObserver(observer) }
@@ -70,10 +77,11 @@ fun HatailGate(content: @Composable () -> Unit) {
             if (intent == null) model.permissionResult(true) else permission.launch(intent)
         }
         val connected = state as? GateState.Connected
-        if (connected != null && (
+        if (connected != null &&
+            (
                 activity?.intent?.getStringExtra(RENDERED_HOME_EXTRA) != connected.home.name ||
                     activity?.intent?.getIntExtra(RENDERED_SERVER_EXTRA, -1) != connected.serverId
-            )
+                )
         ) {
             // A fresh navigation graph is required after activating a different Companion server.
             activity?.startActivity(
@@ -102,34 +110,42 @@ fun HatailGate(content: @Composable () -> Unit) {
         is GateState.Connected ->
             activity?.intent?.getStringExtra(RENDERED_HOME_EXTRA) == currentState.home.name &&
                 activity?.intent?.getIntExtra(RENDERED_SERVER_EXTRA, -1) == currentState.serverId
-        is GateState.Onboarding -> currentState.home == Home.CASA ||
-            activity?.intent?.getStringExtra(ONBOARDING_URL_EXTRA) == currentState.url
+        is GateState.Onboarding ->
+            currentState.home == Home.CASA ||
+                activity?.intent?.getStringExtra(ONBOARDING_URL_EXTRA) == currentState.url
         else -> false
     }
-    if (contentReady) {
-        CompositionLocalProvider(LocalHatailExit provides model::exitHome) { content() }
-    } else {
-        HATheme {
-            GateContent(
-                state,
-                model,
-                onAccount = { context.startActivity(Intent(context, MainActivity::class.java)) },
-                onSolRegistration = { url ->
-                    activity?.startActivity(solOnboardingIntent(context, url))
-                    activity?.finish()
-                },
-            )
+    Column(Modifier.fillMaxSize()) {
+        HATheme { HatailVersionsHeader(versionState, { showVersions = true }) }
+        Box(Modifier.weight(1f)) {
+            if (contentReady) {
+                CompositionLocalProvider(LocalHatailExit provides model::exitHome) { content() }
+            } else {
+                HATheme {
+                    GateContent(
+                        state,
+                        model,
+                        onAccount = { context.startActivity(Intent(context, MainActivity::class.java)) },
+                        onSolRegistration = { url ->
+                            activity?.startActivity(solOnboardingIntent(context, url))
+                            activity?.finish()
+                        },
+                    )
+                }
+            }
         }
     }
     // Registered after the frontend: an explicit Back leaves the home and its VPN.
-    BackHandler(enabled = state != GateState.Choose) { model.exitHome() }
+    BackHandler(enabled = state != GateState.Choose && !showVersions) { model.exitHome() }
+    if (showVersions) {
+        HATheme { HatailVersionsSheet(versionState, { versions.refresh(manual = true) }, { showVersions = false }) }
+    }
 }
 
-private fun solOnboardingIntent(context: android.content.Context, url: String): Intent =
-    LaunchActivity.newInstance(
-        context,
-        LaunchActivity.DeepLink.OpenOnboarding(url, hideExistingServers = true, skipWelcome = true),
-    ).putExtra(ONBOARDING_URL_EXTRA, url)
+private fun solOnboardingIntent(context: android.content.Context, url: String): Intent = LaunchActivity.newInstance(
+    context,
+    LaunchActivity.DeepLink.OpenOnboarding(url, hideExistingServers = true, skipWelcome = true),
+).putExtra(ONBOARDING_URL_EXTRA, url)
 
 @Composable
 private fun GateContent(
