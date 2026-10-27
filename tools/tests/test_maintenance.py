@@ -91,7 +91,7 @@ class SafeguardsTest(unittest.TestCase):
             folder = Path(directory)
             artifact = folder / "hatailapk.apk"
             artifact.write_bytes(b"original")
-            maintain.save(folder / "manifest.json", {"checks": "passed", "apk": artifact.name,
+            maintain.save(folder / "manifest.json", {"schemaVersion": 1, "checks": "passed", "apk": artifact.name,
                                                     "sha256": maintain.digest(artifact)})
             artifact.write_bytes(b"modified")
             args = argparse.Namespace(manifest=folder / "manifest.json", serial=None, dry_run=False)

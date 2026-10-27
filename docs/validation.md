@@ -1,5 +1,13 @@
 # Plan de validación
 
+## Herramientas de mantenimiento, 27 de octubre de 2026
+
+- Consulta real de versiones estables y del motor declarado por Tailscale Android. El informe detectó que la estable de Companion era anterior a nuestro pin y que Tailscale divergía; el ensayo normal rechazó ese cambio antes de modificar los pins.
+- Siete pruebas Python superadas: selección del motor desde `go.mod`, rechazo de reemplazos locales, comprobaciones de instalación, informes antiguos/orígenes distintos, formatos de certificado Android, APK alterado, conservación de worktrees con cambios y aislamiento de las revisiones candidatas (varios escenarios comparten prueba).
+- `python3 tools/maintain.py build` completó las 28 pruebas del núcleo, compilación y lint del selector, compilación de la APK y las 5 pruebas de integración. Archivó APK, hash, certificado y manifiesto. Se obtuvo el mismo SHA-256 que la APK previamente instalada, sin cambiar los upstreams.
+- Ensayo real `baseline-20261027` con los mismos pins: rama y worktrees separados, fuentes verificadas e integración preparada; el árbol principal permaneció limpio.
+- Sin teléfono conectado: `install --dry-run` verificó el artefacto y se detuvo al exigir un dispositivo autorizado. La instalación física con esta nueva herramienta queda pendiente; el APK anterior sí fue instalado y probado durante la sesión del día 26.
+
 ## Selector Casa/Sol, 26 de octubre de 2026
 
 - Desde el Samsung SM-A566B, una sola conexión Tailscale devolvió HTTP 200 y la página de Home Assistant de ambos servidores privados; no se necesitaron dos VPN simultáneas.

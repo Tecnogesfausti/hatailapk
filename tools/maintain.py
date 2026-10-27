@@ -260,7 +260,8 @@ def install(args):
     manifest_path = manifest_path.resolve()
     manifest = json.loads(manifest_path.read_text())
     artifact = (manifest_path.parent / manifest["apk"]).resolve()
-    if artifact.parent != manifest_path.parent or manifest.get("checks") != "passed" or digest(artifact) != manifest["sha256"]:
+    if (manifest.get("schemaVersion") != 1 or artifact.parent != manifest_path.parent or
+            manifest.get("checks") != "passed" or digest(artifact) != manifest["sha256"]):
         raise ValueError("El APK o el manifiesto no corresponden a una compilación verificada")
     candidate = apk_info(artifact)
     if any(candidate[key] != manifest[key] for key in ("package", "certificates", "versionCode", "versionName")):
