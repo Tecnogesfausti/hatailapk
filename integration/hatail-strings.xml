@@ -14,11 +14,13 @@
     <string name="hatail_error">No se pudo verificar la vivienda elegida. Comprueba Tailscale y la dirección privada de Home Assistant. Reintenta o pulsa Atrás para volver al selector.</string>
     <string name="hatail_retry">Retry</string>
     <string name="hatail_versions_title">Versiones y novedades · tocar para ver</string>
+    <string name="hatail_versions_heading">Versiones y novedades</string>
     <string name="hatail_versions_available">Hay novedades · valorar recompilación</string>
     <string name="hatail_versions_summary">Companion %1$s · Tailscale %2$s</string>
     <string name="hatail_versions_build">HATailAPK · compilación %1$s</string>
-    <string name="hatail_versions_explanation">Estas son las versiones integradas en tu APK, no las de Home Assistant Core de Casa o Sol. Las novedades pueden ayudarte a decidir si recompilar. La compatibilidad de una versión nueva requiere ensayo y pruebas.</string>
-    <string name="hatail_versions_schedule">Consulta automática cada día con conexión a Internet. Android puede retrasarla para ahorrar batería. Se conservan los últimos resultados.</string>
+    <string name="hatail_versions_explanation">Componentes de esta APK. Revisa sus novedades para decidir si preparar una recompilación.</string>
+    <string name="hatail_versions_schedule">Revisión diaria con Internet; Android puede retrasarla. Los últimos resultados quedan guardados.</string>
+    <string name="hatail_versions_core_note">Estas versiones no son las de Home Assistant Core de Casa o Sol. Una versión nueva debe probarse con nuestra integración antes de instalarla.</string>
     <string name="hatail_versions_attempt">Último intento: %1$s</string>
     <string name="hatail_versions_checked">Comparación guardada: %1$s</string>
     <string name="hatail_versions_throttled">Se ha consultado recientemente. Espera 15 minutos entre consultas manuales.</string>

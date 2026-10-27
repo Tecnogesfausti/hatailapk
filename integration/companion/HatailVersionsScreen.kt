@@ -17,7 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import io.homeassistant.companion.android.common.R
 import io.homeassistant.companion.android.common.compose.composable.HAAccentButton
@@ -69,8 +71,7 @@ internal fun HatailVersionsSheet(state: HatailVersionsState, onRefresh: () -> Un
             ).padding(HADimens.SPACE4),
             verticalArrangement = Arrangement.spacedBy(HADimens.SPACE4),
         ) {
-            Text(stringResource(R.string.hatail_versions_title), style = HATextStyle.HeadlineMedium)
-            Text(stringResource(R.string.hatail_versions_build, state.revision), style = HATextStyle.BodyMedium)
+            Text(stringResource(R.string.hatail_versions_heading), style = HATextStyle.HeadlineMedium)
             Text(stringResource(R.string.hatail_versions_explanation), style = HATextStyle.Body)
             Text(stringResource(R.string.hatail_versions_schedule), style = HATextStyle.BodyMedium)
             if (state.attemptedAtEpochMs > 0) {
@@ -93,6 +94,8 @@ internal fun HatailVersionsSheet(state: HatailVersionsState, onRefresh: () -> Un
                 enabled = !state.refreshing,
             )
             state.components.forEach { ComponentVersionCard(it) }
+            Text(stringResource(R.string.hatail_versions_core_note), style = HATextStyle.BodyMedium)
+            Text(stringResource(R.string.hatail_versions_build, state.revision), style = HATextStyle.BodyMedium)
             HAPlainButton(stringResource(R.string.hatail_versions_close), onDismiss)
         }
     }
@@ -107,12 +110,12 @@ private fun ComponentVersionCard(component: ComponentVersionState) {
         else -> R.string.hatail_versions_tail_engine
     }
     Column(verticalArrangement = Arrangement.spacedBy(HADimens.SPACE2)) {
-        Text(stringResource(title), style = HATextStyle.HeadlineMedium)
-        Text(stringResource(R.string.hatail_versions_installed, component.installed.version), style = HATextStyle.Body)
-        HAPlainButton(
-            stringResource(R.string.hatail_versions_source, component.installed.commit.take(12)),
-            { uriHandler.openUri(component.installed.sourceUrl) },
+        Text(
+            stringResource(title),
+            style = HATextStyle.Body.copy(fontWeight = FontWeight.SemiBold),
+            textAlign = TextAlign.Start,
         )
+        Text(stringResource(R.string.hatail_versions_installed, component.installed.version), style = HATextStyle.Body)
         if (component.failed) Text(stringResource(R.string.hatail_versions_error), style = HATextStyle.Body)
         val release = component.release
         if (release == null) {
@@ -125,23 +128,33 @@ private fun ComponentVersionCard(component: ComponentVersionState) {
                     style = HATextStyle.BodyMedium,
                 )
             }
-            Text(stringResource(relationMessage(release.relation)), style = HATextStyle.Body)
+            Text(
+                stringResource(relationMessage(release.relation)),
+                style = HATextStyle.Body,
+                textAlign = TextAlign.Start,
+            )
             Text(
                 stringResource(R.string.hatail_versions_checked, formatVersionCheckTime(component.checkedAtEpochMs)),
                 style = HATextStyle.BodyMedium,
+            )
+            HAAccentButton(
+                stringResource(R.string.hatail_versions_notes),
+                { uriHandler.openUri(release.releaseUrl(component.installed.repository)) },
             )
             if (release.notes.isNotBlank()) {
                 Text(
                     release.notes,
                     style = HATextStyle.BodyMedium,
                     textAlign = TextAlign.Start,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-            HAAccentButton(
-                stringResource(R.string.hatail_versions_notes),
-                { uriHandler.openUri(release.releaseUrl(component.installed.repository)) },
-            )
         }
+        HAPlainButton(
+            stringResource(R.string.hatail_versions_source, component.installed.commit.take(12)),
+            { uriHandler.openUri(component.installed.sourceUrl) },
+        )
     }
 }
 
