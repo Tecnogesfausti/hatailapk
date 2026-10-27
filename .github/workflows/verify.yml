@@ -18,6 +18,8 @@ jobs:
           gradle-version: '8.9'
       - name: Test core and build selector library
         run: gradle --no-daemon :connection-core:test :selector-ui:assembleDebug :selector-ui:lintDebug
+      - name: Test maintenance safeguards
+        run: python3 -m unittest discover -s tools/tests -v
       - uses: actions/upload-artifact@v4
         with:
           name: selector-library-and-test-results
@@ -32,3 +34,5 @@ jobs:
           submodules: recursive
       - name: Verify pinned source revisions
         run: python3 tools/upstreams.py verify
+      - name: Check integration points against the pinned sources
+        run: python3 tools/prepare-integrated.py

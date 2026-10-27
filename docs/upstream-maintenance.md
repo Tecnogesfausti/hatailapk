@@ -1,20 +1,62 @@
-# Mantenimiento de las fuentes originales
+# Actualizar, compilar e instalar HATailAPK
 
-Las tres fuentes están fijadas por commit completo en los submódulos y en `upstream.lock.json`. Tailscale Go usa la revisión declarada en el `go.mod` del cliente Android, no su última rama por separado. Esta base inicial incluye una revisión de desarrollo del motor; debe evaluarse una pareja estable antes de distribuir una APK.
+El punto de entrada para el mantenedor y el agente es `python3 tools/maintain.py`. Los tres originales siguen fijados en `upstream.lock.json`. El motor Go se obtiene de `go.mod` del cliente Tailscale Android; no se elige su última versión por separado.
 
-## Incorporar una actualización
+## Revisar novedades
 
-1. Trabajar en una rama del repositorio principal y conservar cualquier cambio local de los submódulos en ramas/commits antes de actualizar.
-2. Leer notas de versión y cambios en APIs, licencias y requisitos de compilación. Hacer `git fetch origin` dentro del submódulo correspondiente.
-3. Revisar la diferencia entre el commit fijado y el candidato. Seleccionar una revisión explícita con `git checkout --detach <commit>` solo con el árbol limpio.
-4. Al actualizar `tailscale-android`, consultar su `go.mod`; fijar `tailscale` al commit correspondiente y actualizar también `moduleVersion`.
-5. Actualizar los SHA de `upstream.lock.json` y registrar los gitlinks con `git add upstream/ upstream.lock.json` desde la raíz. No editar fuentes upstream sin preservar sus parches en el repositorio propio.
-6. Ejecutar `python3 tools/upstreams.py verify`, las pruebas del núcleo, compilación/lint de la biblioteca y, cuando exista, compilación de la APK integrada. Probar la matriz de teléfono real antes de publicar.
+```sh
+python3 tools/maintain.py check
+```
 
-La CI comprueba los módulos propios, que los submódulos coinciden con el lock y que el motor corresponde al cliente Android. La APK experimental se valida con `tools/build-integrated.sh` y las pruebas del teléfono. Las actualizaciones upstream requieren revisión e integración explícitas.
+Consulta las versiones estables de Companion y Tailscale Android, resuelve sus commits y el motor correspondiente y escribe `.maintenance/upstream-report.md` y `.json`. Incluye enlaces a versiones y comparaciones de código. No cambia los pins ni el teléfono. `--ha-ref TAG_O_SHA` y `--tailscale-ref TAG_O_SHA` permiten evaluar revisiones explícitas.
 
-## Cambios propios en los forks
+GitHub Actions ejecuta esta consulta los lunes a las 07:23 UTC y mediante **Actions → Review upstream releases → Run workflow**. El informe queda en el resumen y en el artefacto `upstream-review` durante 30 días. No crea PR, mezcla ramas ni instala automáticamente.
 
-Mantener código reutilizable en `connection-core/` y `selector-ui/`. Cuando la integración necesite modificar Companion o el cliente Tailscale, conservar los cambios como parches versionados o commits en ramas de forks propios y documentar cómo reconstruirlos sobre el commit original. Nunca apuntar un gitlink a un commit que solo exista en un ordenador local.
+La base actual contiene código de desarrollo. Una estable puede aparecer como `behind` o `diverged`: no equivale a una actualización directa. Revisar notas de versión, APIs, licencias y requisitos antes de decidir. GitHub limita las consultas anónimas; puede usarse `GH_TOKEN` o `GITHUB_TOKEN` del entorno, nunca guardarlo en archivos.
 
-Preservar licencias y avisos de los originales, y separar las actualizaciones upstream de los cambios funcionales propios para facilitar su revisión.
+## Ensayar la actualización
+
+Con los cambios propios guardados en un commit:
+
+```sh
+python3 tools/maintain.py trial --name prueba-upstream --build
+```
+
+Crea la rama `maintenance/upstream-prueba-upstream` y la copia `.maintenance/trials/prueba-upstream/`. Allí prepara el lock y los gitlinks candidatos, comprueba su coherencia, aplica la integración y compila. `main`, sus checkouts originales y el móvil conservan sus versiones. Si falla un anclaje o una compilación, el ensayo queda disponible para corregirlo; consultar el registro indicado.
+
+El comando rechaza informes antiguos, orígenes distintos y retrocesos o divergencias. Solo después de revisar una migración intencionada se permite `--allow-non-forward`. Para preparar sin compilar, omitir `--build`. Usar un nombre nuevo por ensayo.
+
+Los worktrees generados en `.integration/` se verifican por revisión. Si cambia el pin, la copia anterior se mueve a `.integration/archive/`, conservando sus cambios locales, y se genera otra. Los cambios funcionales mantenibles deben vivir en `integration/` o los módulos propios, no únicamente en esas copias desechables.
+
+## Compilar una versión conocida
+
+```sh
+python3 tools/maintain.py build
+```
+
+Detecta el SDK desde `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `local.properties` o las rutas habituales del usuario. Requiere JDK 21 y las herramientas Android; las primeras descargas necesitan red y espacio libre. Ejecuta verificación de fuentes, pruebas del núcleo, compilación/lint del selector y compilación/pruebas de la APK integrada, en orden.
+
+Cada ejecución guarda un directorio fechado en `.maintenance/builds/` con `build.log`, `hatailapk.apk` y `manifest.json`. El manifiesto registra SHA-256, revisiones propias/upstream, paquete, versión, certificado y resultado de los controles. `.maintenance/latest-build.json` apunta al último resultado correcto; un fallo no lo sustituye. Los artefactos quedan fuera de Git.
+
+## Instalar conservando el alta de Casa y Sol
+
+Conectar por USB el teléfono y autorizar ADB:
+
+```sh
+python3 tools/maintain.py install --dry-run
+python3 tools/maintain.py install
+```
+
+Con varios móviles, añadir `--serial SERIAL`. Para el APK de un ensayo, añadir `--manifest /ruta/al/ensayo/.maintenance/builds/FECHA/manifest.json`. Al ejecutarlo desde la copia del ensayo se utiliza directamente su última compilación.
+
+El instalador verifica el hash y los metadatos reales, exige el paquete HATailAPK, compara el certificado con la aplicación instalada y rechaza una versión inferior. Conserva el APK anterior en `.maintenance/installations/` y usa `adb install --user 0 -r`, sin desinstalar ni borrar datos. `--dry-run` hace las comprobaciones y copia el APK anterior, pero no instala. Si no hay móvil autorizado, se detiene con instrucciones.
+
+Conservar la clave de firma usada: esta versión experimental utiliza `~/.android/debug.keystore`. Guardar una copia segura fuera de Git; cambiarla impide actualizar la instalación existente. Un APK generado en otro ordenador o en CI con una clave diferente será rechazado. El APK anterior **no es una copia de los datos**: migraciones de base de datos de un upstream pueden impedir volver a una versión antigua. No se fuerza un downgrade.
+
+## Validar e incorporar
+
+Probar Casa y Sol, Atrás con VPN detenida antes del selector, reapertura, cierre del proceso, red móvil/Wi-Fi y autenticación. Verificar por separado sensores y alertas de ambos HA con pantalla apagada; una compilación correcta no demuestra notificaciones fiables.
+
+En la copia del ensayo, revisar `git diff --cached --submodule=log`, guardar las correcciones propias y el lock/gitlinks en un commit. Incorporar la rama a `main` solo tras esas pruebas; `git merge --ff-only maintenance/upstream-prueba-upstream` sirve cuando no hay cambios posteriores en `main`. Si no puede avanzar, revisar la integración entre ramas sin forzarla. Mantener la actualización upstream separada de cambios funcionales ajenos.
+
+Para una sesión futura basta pedir: «Revisa upstreams y prepara un ensayo; compila y, cuando conecte el móvil, instala la versión verificada». El agente debe leer este documento y seguir los comandos, conservando licencias y avisos de los tres originales.

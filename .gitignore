@@ -1,5 +1,6 @@
 /.deploy-keys/
 /.gradle/
+/.kotlin/
 /.gradle-local/
 /.gradle-project/
 /.verification/
@@ -15,3 +16,4 @@ __pycache__/
 *.pyc
 /.integration/
 /dist/
+/.maintenance/

@@ -74,4 +74,8 @@ Orden de implementación:
 
 Consulta [arquitectura](docs/architecture.md), [actualizaciones upstream](docs/upstream-maintenance.md) y [plan de validación](docs/validation.md).
 
+## Mantenimiento asistido
+
+`python3 tools/maintain.py check` genera un informe de versiones estables sin cambiar las fuentes. `trial --name NOMBRE --build` ensaya los candidatos en una rama aislada; `build` verifica y archiva una APK de las versiones actuales. `install --dry-run` comprueba un teléfono conectado y `install` actualiza conservando los datos, después de verificar paquete, versión y certificado. El [procedimiento completo](docs/upstream-maintenance.md) incluye la revisión semanal en GitHub y las pruebas de Casa/Sol.
+
 Código propio bajo Apache-2.0. Cada submódulo conserva su licencia; consulta [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

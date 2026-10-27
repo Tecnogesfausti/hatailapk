@@ -44,7 +44,7 @@ def main():
         print(f"OK {name}: {source['commit']}")
     if args.command != "list":
         go_mod = (ROOT / "upstream/tailscale-android/go.mod").read_text()
-        if not re.search(r"^\s*tailscale\.com\s+" +
+        if not re.search(r"^\s*(?:require\s+)?tailscale\.com\s+" +
                          re.escape(lock["sources"]["tailscale"]["moduleVersion"]) + r"\s*$", go_mod, re.M):
             raise ValueError("Tailscale engine pin differs from the Android client's go.mod")
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Prepare disposable fork worktrees; never patch the pinned upstream checkouts."""
 from pathlib import Path
+from datetime import datetime, timezone
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
@@ -12,6 +13,21 @@ OUT = ROOT / ".integration"
 def worktree(name):
     source = ROOT / "upstream" / name
     target = OUT / name
+    expected = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
+    if target.exists():
+        def revision(path, *args):
+            return subprocess.check_output(["git", "-C", str(path), "rev-parse", *args], text=True).strip()
+        if (revision(target, "--show-toplevel") != str(target.resolve()) or
+                revision(target, "--path-format=absolute", "--git-common-dir") !=
+                revision(source, "--path-format=absolute", "--git-common-dir")):
+            raise ValueError(f"Refusing to replace an unrelated directory: {target}")
+        observed = revision(target, "HEAD")
+        if observed != expected:
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+            archive = OUT / "archive" / f"{name}-{observed[:12]}-{stamp}"
+            archive.parent.mkdir(parents=True, exist_ok=True)
+            subprocess.run(["git", "-C", str(source), "worktree", "move", str(target), str(archive)], check=True)
+            print(f"Preserved previous generated worktree at {archive}")
     if not target.exists():
         subprocess.run(["git", "-C", str(source), "worktree", "add", "--detach", str(target), "HEAD"], check=True)
     return target

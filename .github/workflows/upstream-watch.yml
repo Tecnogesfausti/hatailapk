@@ -1,0 +1,30 @@
+name: Review upstream releases
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 7 * * 1'
+permissions:
+  contents: read
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compare stable releases and the Android client's Go engine
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/maintain.py check
+      - name: Add report to job summary
+        run: cat .maintenance/upstream-report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: upstream-review
+          retention-days: 30
+          path: |
+            .maintenance/upstream-report.json
+            .maintenance/upstream-report.md
+          include-hidden-files: true
