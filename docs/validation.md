@@ -1,5 +1,13 @@
 # Plan de validación
 
+## Historial de 48 horas, 27 de octubre de 2026
+
+- APK de la revisión `80967db` compilada e instalada sobre el paquete existente mediante el instalador verificado, conservando los datos. SHA-256: `0b8a5cc9c416a8ec7a16d8fc31af6b4a331414dd652454e6f6cdd2dea1cf2616`.
+- 37 pruebas de integración superadas: las 20 anteriores más 17 del historial (6 de repositorio, 5 de captura, 2 de Room, 2 de imágenes y 2 de interfaz). Pasaron también las 28 del núcleo, 8 de herramientas, compilación y lint del selector; la CI del commit terminó correctamente.
+- Las pruebas usan notificaciones y datos sintéticos. Comprueban las dos aplicaciones permitidas, descarte de otros paquetes/servicios/resúmenes, conservación de alertas persistentes, bitmap de Companion oficial, copia privada de imágenes, duplicados, fallos de imagen y límite temporal de 48 horas.
+- Se abrió el detalle de acceso a notificaciones de Android para el nuevo servicio de historial. El teléfono seguía bloqueado y el permiso aún no estaba concedido al terminar esta comprobación: falta que el usuario lo active. No afirmar captura física de avisos oficiales ni las pruebas locales de texto/imagen antes de ese paso.
+- Pendiente tras el permiso: importar avisos activos permitidos, «Enviar prueba», comprobar la copia tras descartar el aviso, ampliar la imagen, filtros por aplicación y cierre del historial sin desconectar la vivienda.
+
 ## Versiones y novedades en la APK, 27 de octubre de 2026
 
 - Cabecera y panel de versiones instalados en el Samsung SM-A566B con el instalador verificado, conservando los registros Casa/Sol. El motor mostrado es 1.105.4 y Companion muestra su versión real `2026.10.2-SNAPSHOT-minimal`; las revisiones proceden del lock y de los datos nativos correspondientes.
