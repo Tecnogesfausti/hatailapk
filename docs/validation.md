@@ -1,5 +1,14 @@
 # Plan de validación
 
+## Versiones y novedades en la APK, 27 de octubre de 2026
+
+- Cabecera y panel de versiones instalados en el Samsung SM-A566B con el instalador verificado, conservando los registros Casa/Sol. El motor mostrado es 1.105.4 y Companion muestra su versión real `2026.10.2-SNAPSHOT-minimal`; las revisiones proceden del lock y de los datos nativos correspondientes.
+- Consulta real desde el móvil completada para los tres proyectos: Companion estable 2026.10.1 se clasificó como anterior; los estables Tailscale Android y Go 1.104.2, como líneas divergentes. Los tres resultados quedaron guardados sin errores y conservaron fecha después de actualizar la APK.
+- Se comprobó la apertura de las notas en Firefox, el aviso de intervalo mínimo al consultar manualmente otra vez y el regreso a la aplicación. Abrir/cerrar versiones mantuvo la VPN; Atrás desde el hogar volvió al selector con VPN detenida. Se volvió a Sol y se verificaron su servidor activo, su panel privado y la VPN. La pantalla de versiones quedó abierta sobre Sol.
+- WorkManager ejecutó correctamente las consultas iniciales. El trabajo periódico está configurado a 24 horas con red; no se ha esperado un día completo ni validado todavía su ejecución tras un reinicio. Android puede retrasarlo.
+- 28 pruebas del núcleo, 20 de integración (10 de caché/comparación, 3 de cliente GitHub, 2 de interfaz y 5 de acceso HA), 8 de herramientas, compilación y lint del selector superados. Se probó la forma real de respuesta GitHub sin campo `head_commit`, errores de red/límite, cancelación e invalidación al cambiar los pins.
+- APK instalada de la revisión `a636a30`: SHA-256 `db7136ae01d91d9592d7536b00327248e664867fd5f1cc6a0eb2ce30a45e4e13`.
+
 ## Herramientas de mantenimiento, 27 de octubre de 2026
 
 - Consulta real de versiones estables y del motor declarado por Tailscale Android. El informe detectó que la estable de Companion era anterior a nuestro pin y que Tailscale divergía; el ensayo normal rechazó ese cambio antes de modificar los pins.
