@@ -13,7 +13,7 @@
     <string name="hatail_working">Verifying account, tailnet and connection…</string>
     <string name="hatail_error">No se pudo verificar la vivienda elegida. Comprueba Tailscale y la dirección privada de Home Assistant. Reintenta o pulsa Atrás para volver al selector.</string>
     <string name="hatail_retry">Retry</string>
-    <string name="hatail_versions_title">Versiones y novedades · tocar para ver</string>
+    <string name="hatail_versions_title">Versiones</string>
     <string name="hatail_versions_heading">Versiones y novedades</string>
     <string name="hatail_versions_available">Hay novedades · valorar recompilación</string>
     <string name="hatail_versions_summary">Companion %1$s · Tailscale %2$s</string>
@@ -42,4 +42,26 @@
     <string name="hatail_versions_older">Tu APK utiliza código posterior a esta estable. Pasar a ella sería un retroceso, no una actualización directa.</string>
     <string name="hatail_versions_diverged">Tu APK y esta estable pertenecen a líneas distintas. Revisar las diferencias y la compatibilidad antes de recompilar.</string>
     <string name="hatail_versions_unknown">No se ha podido determinar qué código es posterior. Revisa las novedades y compara las revisiones antes de decidir.</string>
+    <string name="hatail_history_button">Historial 48 h</string>
+    <string name="hatail_history_title">Avisos · últimas 48 horas</string>
+    <string name="hatail_history_listener_label">HATailAPK · historial HA (48 h)</string>
+    <string name="hatail_history_permission_help">Activa el acceso a notificaciones para guardar los avisos de HATailAPK y Companion oficial. Android concede acceso general; este historial solo archiva esas aplicaciones. También importa los avisos de las últimas 48 h que sigan en la bandeja.</string>
+    <string name="hatail_history_enable">Activar acceso a notificaciones</string>
+    <string name="hatail_history_retention">Texto e imágenes guardados localmente durante 48 h, aunque descartes el aviso. No se pueden recuperar los borrados antes de activar el acceso.</string>
+    <string name="hatail_history_settings">Acceso</string>
+    <string name="hatail_history_sample">Enviar prueba</string>
+    <string name="hatail_history_empty">No hay avisos en este filtro. Aparecerán los que reciba Android a partir de activar el acceso; este historial no recupera mensajes que no hayan llegado al móvil.</string>
+    <string name="hatail_history_all">Todos</string>
+    <string name="hatail_history_hatail">HATailAPK</string>
+    <string name="hatail_history_official">Companion oficial</string>
+    <string name="hatail_history_unknown_home">El aviso no indica hogar</string>
+    <string name="hatail_history_image">Imagen del aviso; tocar para ampliar</string>
+    <string name="hatail_history_image_missing">Imagen no disponible o pendiente de copiar. El texto se conserva.</string>
+    <string name="hatail_history_sample_channel">Pruebas del historial</string>
+    <string name="hatail_history_sample_title">Prueba del historial</string>
+    <string name="hatail_history_sample_origin">Prueba local</string>
+    <string name="hatail_history_sample_text">Aviso de prueba solo de texto. No procede de Casa ni Sol.</string>
+    <string name="hatail_history_sample_image_text">Aviso de prueba con imagen. No procede de Casa ni Sol.</string>
+    <string name="hatail_history_sample_picture">Imagen de prueba</string>
+    <string name="hatail_history_sample_failed">Activa las notificaciones de HATailAPK en Android para enviar la prueba.</string>
 </resources>

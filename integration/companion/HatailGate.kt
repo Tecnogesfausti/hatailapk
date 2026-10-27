@@ -52,8 +52,10 @@ val LocalHatailExit = staticCompositionLocalOf<() -> Unit> { {} }
 fun HatailGate(content: @Composable () -> Unit) {
     val model: HatailGateViewModel = hiltViewModel()
     val versions: HatailVersionsViewModel = hiltViewModel()
+    val history: HatailHistoryViewModel = hiltViewModel()
     val versionState by versions.state.collectAsStateWithLifecycle()
     var showVersions by rememberSaveable { mutableStateOf(false) }
+    var showHistory by rememberSaveable { mutableStateOf(false) }
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = LocalActivity.current
@@ -66,6 +68,7 @@ fun HatailGate(content: @Composable () -> Unit) {
             if (event == Lifecycle.Event.ON_RESUME) {
                 model.refresh()
                 versions.refresh()
+                history.refreshAccess()
             }
         }
         owner.lifecycle.addObserver(observer)
@@ -116,7 +119,19 @@ fun HatailGate(content: @Composable () -> Unit) {
         else -> false
     }
     Column(Modifier.fillMaxSize()) {
-        HATheme { HatailVersionsHeader(versionState, { showVersions = true }) }
+        HATheme {
+            HatailVersionsHeader(
+                versionState,
+                onHistory = {
+                    showVersions = false
+                    showHistory = true
+                },
+                onOpen = {
+                    showHistory = false
+                    showVersions = true
+                },
+            )
+        }
         Box(Modifier.weight(1f)) {
             if (contentReady) {
                 CompositionLocalProvider(LocalHatailExit provides model::exitHome) { content() }
@@ -136,9 +151,22 @@ fun HatailGate(content: @Composable () -> Unit) {
         }
     }
     // Registered after the frontend: an explicit Back leaves the home and its VPN.
-    BackHandler(enabled = state != GateState.Choose && !showVersions) { model.exitHome() }
+    BackHandler(enabled = state != GateState.Choose && !showVersions && !showHistory) { model.exitHome() }
     if (showVersions) {
         HATheme { HatailVersionsSheet(versionState, { versions.refresh(manual = true) }, { showVersions = false }) }
+    }
+    if (showHistory) {
+        val historyState by history.state.collectAsStateWithLifecycle()
+        HATheme {
+            HatailHistorySheet(
+                historyState,
+                history::select,
+                history::image,
+                onSettings = { context.startActivity(historyAccessIntent(context)) },
+                onSample = history::sample,
+                onDismiss = { showHistory = false },
+            )
+        }
     }
 }
 

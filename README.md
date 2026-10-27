@@ -84,4 +84,10 @@ La cabecera «Versiones y novedades» está disponible en el selector y dentro d
 
 La consulta pública a GitHub se programa cada 24 horas con Internet, sujeta a los retrasos de batería de Android. Hay consulta manual con un mínimo de 15 minutos y caché sin conexión. Se compara el historial de commits: distingue una actualización posterior, una estable anterior y una rama divergente, sin confundir el número de versión con compatibilidad probada. El aviso ayuda a preparar un ensayo; la recompilación sigue realizándose en el PC. Estas versiones corresponden a la APK, no a Home Assistant Core de las viviendas.
 
+## Historial de avisos de 48 horas
+
+El botón «Historial 48 h» guarda texto e imágenes de las notificaciones que Android publique de HATailAPK y Companion oficial, tras conceder acceso al lector «HATailAPK · historial HA (48 h)». Hay filtros por aplicación y ampliación de imágenes. Descartar el aviso de la bandeja conserva su copia en el historial. El hogar solo se muestra cuando lo indica el propio aviso; no se supone que corresponda al hogar abierto.
+
+Se importan los avisos recientes que sigan activos al conceder el permiso, pero no los ya borrados ni los que no hayan llegado al teléfono. Los datos se guardan localmente y la ventana visible es de 48 horas; Android puede retrasar la limpieza física en segundo plano. Consulta [alcance, permisos y mantenimiento](docs/notification-history.md).
+
 Código propio bajo Apache-2.0. Cada submódulo conserva su licencia; consulta [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

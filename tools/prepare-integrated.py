@@ -118,6 +118,7 @@ android.defaultConfig {
 dependencies {
     implementation(project(":tailscale-embedded"))
     implementation(files(rootProject.file("../../upstream/tailscale-android/android/libs/libtailscale.aar")))
+    ksp(libs.androidx.room.compiler)
 }
 // The minimal build has no Firebase transport or Google Services credentials.
 tasks.matching { it.name.contains("GoogleServices") }.configureEach { enabled = false }
@@ -125,6 +126,16 @@ tasks.matching { it.name.contains("GoogleServices") }.configureEach { enabled = 
     replace(ha / "app/src/main/kotlin/io/homeassistant/companion/android/HomeAssistantApplication.kt",
             "open class HomeAssistantApplication : Application()", "open class HomeAssistantApplication : com.tailscale.ipn.App()")
     replace(ha / "app/src/main/AndroidManifest.xml", 'android:allowBackup="true"', 'android:allowBackup="false"')
+    replace(ha / "app/src/main/AndroidManifest.xml", "</application>", '''
+        <service android:name="io.homeassistant.companion.android.hatail.HatailNotificationListener"
+            android:label="@string/hatail_history_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>''')
     replace(ha / "app/src/main/kotlin/io/homeassistant/companion/android/frontend/FrontendScreen.kt",
             "BackHandler(enabled = content?.canGoBack == true) { webView?.goBack() }",
             "val exitHatailHome = io.homeassistant.companion.android.hatail.LocalHatailExit.current\n    BackHandler { exitHatailHome() }")
