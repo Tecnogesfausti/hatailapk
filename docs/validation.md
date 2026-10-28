@@ -1,5 +1,11 @@
 # Plan de validación
 
+## Presentación del historial, 28 de octubre de 2026
+
+- Revisión `79ee342`: título y mensaje primero, fecha y origen disponible al pie, sin etiquetas repetidas de aplicación ni hogar desconocido. Dos regresiones nuevas verifican títulos genéricos y metadatos compactos.
+- Compilación, lint del selector, 28 pruebas del núcleo y 39 pruebas de integración correctas.
+- Comprobado en Android que el acceso de `HatailNotificationListener` está concedido. Esto resuelve el permiso pendiente de la sesión anterior; no acredita por sí solo el transporte de alertas ni la copia física de imágenes.
+
 ## Historial de 48 horas, 27 de octubre de 2026
 
 - APK de la revisión `80967db` compilada e instalada sobre el paquete existente mediante el instalador verificado, conservando los datos. SHA-256: `0b8a5cc9c416a8ec7a16d8fc31af6b4a331414dd652454e6f6cdd2dea1cf2616`.
