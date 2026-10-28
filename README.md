@@ -2,7 +2,7 @@
 
 Una APK Android para elegir **Casa** o **Sol**, activar su conexión Tailscale y abrir el Home Assistant correspondiente sin depender de Cloudflare para el acceso al panel.
 
-Al reabrir, continuar en el hogar seleccionado como en Companion, tras comprobar su VPN. Llevar la aplicación a segundo plano no abandona el hogar ni desconecta el túnel. El botón o gesto **Atrás** sale del hogar, desconecta Tailscale y devuelve al selector cuando el cierre esté confirmado. El selector aparece en el primer uso o después de esa salida explícita.
+La cabecera incorpora dos selectores con iconos, **Casa** y **Sol**, además de versiones e historial. Al reabrir se restaura el último hogar, tras comprobar su VPN; en el primer uso se inicia Casa. El cambio verifica el HA de destino sin detener la VPN compartida ni las escuchas de notificaciones. **Atrás** navega por el panel y, en su raíz, lleva la aplicación a segundo plano conservando la conexión. No hace falta pasar por un selector inicial.
 
 ## Estado actual
 
@@ -16,7 +16,7 @@ Al reabrir, continuar en el hogar seleccionado como en Companion, tras comprobar
 - `integration/`: adaptador nativo de las dos viviendas, pantalla Compose y ajustes de compilación del cliente Tailscale como biblioteca.
 - `.integration/`: worktrees generados y resultados locales, excluidos de Git; las fuentes fijadas en `upstream/` permanecen intactas.
 
-El cliente integrado tiene su propio almacén seguro. Casa conserva su registro actual; Sol pide una vez la URL privada de su HA y su autenticación, y después aparece como acceso directo en el selector. Cada vivienda conserva su identificador de servidor y registro Companion. Atrás desconecta la VPN antes de volver al selector. Las notificaciones importantes y la entrega desde ambas viviendas necesitan pruebas específicas antes de considerar esta versión de uso habitual.
+El cliente integrado tiene su propio almacén seguro. Casa conserva su registro actual; Sol pide una vez la URL privada de su HA y su autenticación, y después se abre desde su selector en la cabecera. Cada vivienda conserva su identificador de servidor y registro Companion. Los dos registros se configuran para recibir notificaciones mediante WebSocket incluso con la pantalla apagada; la entrega física, restricciones de batería y reinicios requieren las pruebas descritas en [cambio de hogar y avisos](docs/home-switching.md).
 
 ## Compilar la APK
 
@@ -80,7 +80,7 @@ Consulta [arquitectura](docs/architecture.md), [actualizaciones upstream](docs/u
 
 ## Versiones dentro de la APK
 
-La cabecera «Versiones y novedades» está disponible en el selector y dentro del hogar. Muestra las versiones integradas de Companion y Tailscale; al tocarla aparecen los tres componentes (Companion, cliente Tailscale Android y motor Go), sus revisiones, la última estable consultada, la fecha y un enlace a las notas de versión. Abrir o cerrar esta información conserva el hogar y la VPN.
+La cabecera «Versiones y novedades» está disponible junto a los selectores Casa/Sol. Muestra las versiones integradas de Companion y Tailscale; al tocarla aparecen los tres componentes (Companion, cliente Tailscale Android y motor Go), sus revisiones, la última estable consultada, la fecha y un enlace a las notas de versión. Abrir o cerrar esta información conserva el hogar y la VPN.
 
 La consulta pública a GitHub se programa cada 24 horas con Internet, sujeta a los retrasos de batería de Android. Hay consulta manual con un mínimo de 15 minutos y caché sin conexión. Se compara el historial de commits: distingue una actualización posterior, una estable anterior y una rama divergente, sin confundir el número de versión con compatibilidad probada. El aviso ayuda a preparar un ensayo; la recompilación sigue realizándose en el PC. Estas versiones corresponden a la APK, no a Home Assistant Core de las viviendas.
 

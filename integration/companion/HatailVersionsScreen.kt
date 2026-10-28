@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
@@ -40,7 +39,7 @@ import java.util.Date
 internal fun HatailVersionsHeader(state: HatailVersionsState, onHistory: () -> Unit = {}, onOpen: () -> Unit) {
     Surface(color = LocalHAColorScheme.current.colorSurfaceLow) {
         Column(
-            Modifier.fillMaxWidth().statusBarsPadding().clickable(role = Role.Button, onClick = onOpen)
+            Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen)
                 .padding(horizontal = HADimens.SPACE4, vertical = HADimens.SPACE2),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {

@@ -9,8 +9,9 @@ import com.tailscale.ipn.ui.model.Ipn
 import com.tailscale.ipn.ui.model.IpnLocal
 import com.tailscale.ipn.ui.model.IpnState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.homeassistant.companion.android.common.data.servers.ServerManager
 import es.tecnogesfausti.hatail.core.TailnetAddressPolicy
+import io.homeassistant.companion.android.common.data.servers.ServerManager
+import io.homeassistant.companion.android.websocket.WebsocketManager
 import java.net.URI
 import javax.inject.Inject
 import kotlin.coroutines.resume
@@ -50,7 +51,6 @@ internal enum class Home { CASA, SOL }
 
 internal sealed interface GateState {
     data object Loading : GateState
-    data object Choose : GateState
     data object Account : GateState
     data object Permission : GateState
     data class SetupHomeAssistant(val home: Home, val savedUrl: String? = null) : GateState
@@ -70,15 +70,17 @@ object HatailAccess {
 internal class HatailGateViewModel @Inject constructor(
     private val servers: ServerManager,
     private val homeAssistant: HatailHomeAssistantRepository,
+    private val notifications: HatailBackgroundNotifications,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<GateState>(GateState.Loading)
     val state = mutableState.asStateFlow()
+    private val mutableHome = MutableStateFlow(Home.CASA)
+    val selected = mutableHome.asStateFlow()
     private val app get() = App.get()
     private val client by lazy { Client(app.applicationScope) }
     private var operation: Job? = null
 
     init {
-        refresh()
         viewModelScope.launch {
             servers.serversFlow.collect { registered ->
                 if (registered.any { it.connection.isRegistered } && isShowingHome()) {
@@ -112,20 +114,38 @@ internal class HatailGateViewModel @Inject constructor(
         }
     }
 
-    /** Revalidate a foreground session without stopping a correctly running VPN. */
-    fun refresh() = runOperation { connectSelected() }
+    /** Notification links may target the other bound home; validate it before exposing its frontend. */
+    fun openRequestedServer(serverId: Int?) = runOperation {
+        val home = homeForRequestedServer(
+            serverId,
+            read { getInt(KEY_SERVER, -1) },
+            read { getInt(KEY_SOL_SERVER, -1) },
+        )
+        if (home != null) edit { putString(KEY_HOME, home.name) }
+        connectSelected()
+    }
 
-    private fun isShowingHome() = mutableState.value is GateState.Connected || mutableState.value is GateState.Onboarding
+    /** Revalidate a foreground session without stopping a correctly running VPN. */
+    fun refresh() {
+        if (operation?.isActive != true) runOperation { connectSelected() }
+    }
+
+    private fun isShowingHome() =
+        mutableState.value is GateState.Connected || mutableState.value is GateState.Onboarding
 
     /** The old Casa flag remains readable so an installed Casa session survives this update. */
-    fun selectHome(home: Home) = runOperation {
-        HatailAccess.allowed = false
-        mutableState.value = GateState.Loading
-        edit {
-            putString(KEY_HOME, home.name)
-            putBoolean(KEY_SELECTED, home == Home.CASA)
+    fun selectHome(home: Home) {
+        if (operation?.isActive == true || (state.value as? GateState.Connected)?.home == home) return
+        mutableHome.value = home
+        runOperation {
+            HatailAccess.allowed = false
+            mutableState.value = GateState.Loading
+            edit {
+                putString(KEY_HOME, home.name)
+                putBoolean(KEY_SELECTED, home == Home.CASA)
+            }
+            connectSelected()
         }
-        connectSelected()
     }
 
     /** Associate the shared tailnet with the account actually observed in this APK. */
@@ -168,22 +188,6 @@ internal class HatailGateViewModel @Inject constructor(
         if (granted) refresh() else mutableState.value = GateState.Error
     }
 
-    /** System Back leaves the selected home; background lifecycle events do not call this. */
-    fun exitHome() {
-        HatailAccess.allowed = false
-        mutableState.value = GateState.Loading
-        runOperation {
-            edit {
-                putBoolean(KEY_SELECTED, false)
-                remove(KEY_HOME)
-                remove(KEY_ONBOARDING_HOME)
-            }
-            servers.servers().forEach { servers.webSocketRepository(it.id).shutdown() }
-            stopTunnel()
-            mutableState.value = GateState.Choose
-        }
-    }
-
     private fun runOperation(block: suspend () -> Unit) {
         val previous = operation
         operation = viewModelScope.launch {
@@ -202,12 +206,7 @@ internal class HatailGateViewModel @Inject constructor(
 
     private suspend fun connectSelected() {
         val home = selectedHome()
-        if (home == null) {
-            HatailAccess.allowed = false
-            stopTunnel()
-            mutableState.value = GateState.Choose
-            return
-        }
+        mutableHome.value = home
         if (read { getString(KEY_PROFILE, null) } == null) {
             mutableState.value = GateState.Account
             return
@@ -221,12 +220,13 @@ internal class HatailGateViewModel @Inject constructor(
             mutableState.value = GateState.Loading
             activateBoundProfile()
         }
+        configureNotifications()
         verifyHomeAssistant(home)
     }
 
-    private suspend fun selectedHome(): Home? = read {
+    private suspend fun selectedHome(): Home = read {
         getString(KEY_HOME, null)?.let(Home::valueOf)
-            ?: if (getBoolean(KEY_SELECTED, false)) Home.CASA else null
+            ?: Home.CASA
     }
 
     private suspend fun activateBoundProfile() {
@@ -278,7 +278,16 @@ internal class HatailGateViewModel @Inject constructor(
             mutableState.value = if (onboarding) {
                 GateState.Onboarding(home, if (home == Home.SOL) read { getString(KEY_SOL_URL, null) } else null)
             } else {
-                GateState.SetupHomeAssistant(home, if (home == Home.SOL) read { getString(KEY_SOL_URL, null) } else null)
+                GateState.SetupHomeAssistant(
+                    home,
+                    if (home ==
+                        Home.SOL
+                    ) {
+                        read { getString(KEY_SOL_URL, null) }
+                    } else {
+                        null
+                    },
+                )
             }
             return
         }
@@ -288,8 +297,24 @@ internal class HatailGateViewModel @Inject constructor(
             putString(boundUrlKey, server.connection.externalUrl)
             remove(KEY_ONBOARDING_HOME)
         }
+        configureNotifications()
         HatailAccess.allowed = true
         mutableState.value = GateState.Connected(home, server.id)
+    }
+
+    private suspend fun configureNotifications() {
+        notifications.configure(
+            listOfNotNull(
+                read { getInt(KEY_SERVER, -1) }.takeIf { it >= 0 }?.let { id ->
+                    read { getString(KEY_SERVER_URL, null) }?.let { HomeServerBinding(id, it) }
+                },
+                read { getInt(KEY_SOL_SERVER, -1) }.takeIf { it >= 0 }?.let { id ->
+                    read { getString(KEY_SOL_SERVER_URL, null) }?.let { HomeServerBinding(id, it) }
+                },
+            ),
+            requireNotNull(read { getString(KEY_TAILNET, null) }),
+        )
+        WebsocketManager.start(app)
     }
 
     private suspend fun currentProfile() = request<IpnLocal.LoginProfile> { client.currentProfile(it) }
@@ -314,4 +339,11 @@ internal class HatailGateViewModel @Inject constructor(
 
     private suspend fun edit(block: android.content.SharedPreferences.Editor.() -> Unit) =
         withContext(Dispatchers.IO) { check(app.getEncryptedPrefs().edit().apply(block).commit()) }
+}
+
+internal fun homeForRequestedServer(requested: Int?, casa: Int, sol: Int): Home? = when {
+    requested == null || requested < 0 || casa == sol -> null
+    requested == casa -> Home.CASA
+    requested == sol -> Home.SOL
+    else -> null
 }

@@ -44,7 +44,7 @@ private const val RENDERED_HOME_EXTRA = "hatail.rendered_home"
 private const val RENDERED_SERVER_EXTRA = "hatail.rendered_server"
 private const val ONBOARDING_URL_EXTRA = "hatail.onboarding_url"
 
-/** Explicit exit action shared with Companion's frontend Back handler. */
+/** Background action shared with Companion's frontend Back handler. */
 val LocalHatailExit = staticCompositionLocalOf<() -> Unit> { {} }
 
 /** Gate the genuine Companion frontend on a verified embedded Tailscale connection. */
@@ -57,9 +57,16 @@ fun HatailGate(content: @Composable () -> Unit) {
     var showVersions by rememberSaveable { mutableStateOf(false) }
     var showHistory by rememberSaveable { mutableStateOf(false) }
     val state by model.state.collectAsStateWithLifecycle()
+    val selectedHome by model.selected.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = LocalActivity.current
     val owner = LocalLifecycleOwner.current
+    val requested = (activity as? LaunchActivity)?.hatailRequestedNavigation
+    LaunchedEffect(Unit) {
+        model.openRequestedServer(
+            requested?.serverId?.takeIf { activity?.intent?.hasExtra(RENDERED_HOME_EXTRA) != true },
+        )
+    }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         model.permissionResult(it.resultCode == Activity.RESULT_OK)
     }
@@ -90,7 +97,8 @@ fun HatailGate(content: @Composable () -> Unit) {
             activity?.startActivity(
                 LaunchActivity.newInstance(
                     context,
-                    LaunchActivity.DeepLink.NavigateTo(FrontendTarget.Default, connected.serverId),
+                    requested?.takeIf { it.serverId == connected.serverId }
+                        ?: LaunchActivity.DeepLink.NavigateTo(FrontendTarget.Default, connected.serverId),
                 ).apply {
                     putExtra(RENDERED_HOME_EXTRA, connected.home.name)
                     putExtra(RENDERED_SERVER_EXTRA, connected.serverId)
@@ -120,6 +128,11 @@ fun HatailGate(content: @Composable () -> Unit) {
     }
     Column(Modifier.fillMaxSize()) {
         HATheme {
+            HatailHomeSwitcher(
+                selectedHome,
+                enabled = state != GateState.Loading,
+                onSelect = model::selectHome,
+            )
             HatailVersionsHeader(
                 versionState,
                 onHistory = {
@@ -134,7 +147,7 @@ fun HatailGate(content: @Composable () -> Unit) {
         }
         Box(Modifier.weight(1f)) {
             if (contentReady) {
-                CompositionLocalProvider(LocalHatailExit provides model::exitHome) { content() }
+                CompositionLocalProvider(LocalHatailExit provides { activity?.moveTaskToBack(true) }) { content() }
             } else {
                 HATheme {
                     GateContent(
@@ -150,8 +163,8 @@ fun HatailGate(content: @Composable () -> Unit) {
             }
         }
     }
-    // Registered after the frontend: an explicit Back leaves the home and its VPN.
-    BackHandler(enabled = state != GateState.Choose && !showVersions && !showHistory) { model.exitHome() }
+    // Back navigates within the frontend, or backgrounds the task without closing notification transports.
+    BackHandler(enabled = !contentReady && !showVersions && !showHistory) { activity?.moveTaskToBack(true) }
     if (showVersions) {
         HATheme { HatailVersionsSheet(versionState, { versions.refresh(manual = true) }, { showVersions = false }) }
     }
@@ -188,10 +201,6 @@ private fun GateContent(
     ) {
         Text(stringResource(R.string.hatail_title))
         when (state) {
-            GateState.Choose -> {
-                HAAccentButton(stringResource(R.string.hatail_casa), { model.selectHome(Home.CASA) })
-                HAAccentButton(stringResource(R.string.hatail_sol), { model.selectHome(Home.SOL) })
-            }
             GateState.Account -> {
                 Text(stringResource(R.string.hatail_account_help))
                 HAAccentButton(stringResource(R.string.hatail_account), onAccount)

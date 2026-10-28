@@ -75,6 +75,7 @@ def main():
         "app/src/main/kotlin/io/homeassistant/companion/android/HomeAssistantApplication.kt",
         "app/src/main/kotlin/io/homeassistant/companion/android/launch/LaunchActivity.kt",
         "app/src/main/AndroidManifest.xml",
+        "app/src/main/kotlin/io/homeassistant/companion/android/notifications/MessagingManager.kt",
         "app/src/main/kotlin/io/homeassistant/companion/android/frontend/FrontendScreen.kt",
     ):
         shutil.copyfile(ROOT / "upstream/home-assistant-android" / relative, ha / relative)
@@ -138,8 +139,16 @@ tasks.matching { it.name.contains("GoogleServices") }.configureEach { enabled = 
     </application>''')
     replace(ha / "app/src/main/kotlin/io/homeassistant/companion/android/frontend/FrontendScreen.kt",
             "BackHandler(enabled = content?.canGoBack == true) { webView?.goBack() }",
-            "val exitHatailHome = io.homeassistant.companion.android.hatail.LocalHatailExit.current\n    BackHandler { exitHatailHome() }")
+            "val backgroundHatail = io.homeassistant.companion.android.hatail.LocalHatailExit.current\n    BackHandler(enabled = content?.canGoBack != true) { backgroundHatail() }\n    BackHandler(enabled = content?.canGoBack == true) { webView?.goBack() }")
+    replace(ha / "app/src/main/kotlin/io/homeassistant/companion/android/notifications/MessagingManager.kt",
+            "            val allowCommands = serverManager.integrationRepository(webhookServerId).isTrusted()",
+            "            jsonData = io.homeassistant.companion.android.hatail.scopeHomeNotification(jsonData, webhookServerId)\n\n"
+            "            val allowCommands = serverManager.integrationRepository(webhookServerId).isTrusted()")
     activity = ha / "app/src/main/kotlin/io/homeassistant/companion/android/launch/LaunchActivity.kt"
+    replace(activity, "    private val viewModel: LaunchViewModel by viewModels(",
+            "    internal val hatailRequestedNavigation: DeepLink.NavigateTo?\n"
+            "        get() = IntentCompat.getParcelableExtra(intent, DEEP_LINK_KEY, DeepLink::class.java) as? DeepLink.NavigateTo\n\n"
+            "    private val viewModel: LaunchViewModel by viewModels(")
     replace(activity, "viewModel.shouldShowSplashScreen()",
             "io.homeassistant.companion.android.hatail.HatailAccess.allowed && viewModel.shouldShowSplashScreen()")
     replace(activity, "        setContent {\n            HATheme {", "        setContent {\n            io.homeassistant.companion.android.hatail.HatailGate {\n            HATheme {")
@@ -168,6 +177,7 @@ tasks.matching { it.name.contains("GoogleServices") }.configureEach { enabled = 
     for path in (ROOT / "integration/tests").glob("*.kt"):
         shutil.copyfile(path, tests / path.name)
     shutil.copytree(ROOT / "connection-core/src/main/kotlin", ha / "app/src/main/kotlin", dirs_exist_ok=True)
+    shutil.copytree(ROOT / "integration/drawable", ha / "common/src/main/res/drawable", dirs_exist_ok=True)
     shutil.copyfile(ROOT / "integration/hatail-strings.xml", ha / "common/src/main/res/values/hatail.xml")
     assets = ha / "app/src/main/assets"
     assets.mkdir(parents=True, exist_ok=True)

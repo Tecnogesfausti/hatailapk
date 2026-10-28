@@ -28,25 +28,35 @@ internal class HatailHomeAssistantRepository @Inject constructor(private val ser
         val registered = servers.servers().filter { it.connection.isRegistered }
         if (registered.isEmpty()) return null
         val server = when {
-            verifiedUrl != null -> registered.single { it.id == boundId && sameHomeAssistantEndpoint(URI(it.connection.externalUrl), URI(verifiedUrl)) }
-            expectedUrl != null -> registered.singleOrNull { sameHomeAssistantEndpoint(URI(it.connection.externalUrl), URI(expectedUrl)) } ?: return null
+            verifiedUrl != null -> registered.single {
+                it.id == boundId &&
+                    sameHomeAssistantEndpoint(URI(it.connection.externalUrl), URI(verifiedUrl))
+            }
+            expectedUrl != null -> registered.singleOrNull {
+                sameHomeAssistantEndpoint(URI(it.connection.externalUrl), URI(expectedUrl))
+            }
+                ?: return null
             !allowSingleUnbound -> return null
             else -> registered.single()
         }
         require(TailnetAddressPolicy.accepts(URI(server.connection.externalUrl), tailnet))
-        val connection = server.connection.copy(
-            internalUrl = server.connection.externalUrl,
-            internalVpn = true,
-            prioritizeInternal = false,
-            allowInsecureConnection = false,
-            useCloud = false,
-            cloudUrl = null,
-            cloudhookUrl = null,
-        )
-        val prepared = server.copy(connection = connection)
-        if (connection != server.connection) servers.updateServer(prepared)
+        val prepared = server.withTailnetConnection()
+        if (prepared != server) servers.updateServer(prepared)
         servers.activateServer(server.id)
         withTimeout(HA_VERIFICATION_TIMEOUT_MS) { servers.integrationRepository(server.id).getConfig() }
         return prepared
     }
 }
+
+/** Both dashboard and background transports use the same private endpoint without cloud fallback. */
+internal fun Server.withTailnetConnection(): Server = copy(
+    connection = connection.copy(
+        internalUrl = connection.externalUrl,
+        internalVpn = true,
+        prioritizeInternal = false,
+        allowInsecureConnection = false,
+        useCloud = false,
+        cloudUrl = null,
+        cloudhookUrl = null,
+    ),
+)

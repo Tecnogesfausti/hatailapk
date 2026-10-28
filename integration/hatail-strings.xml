@@ -1,7 +1,7 @@
 <resources>
     <string name="hatail_title">HATailAPK</string>
-    <string name="hatail_casa">Conectar a Casa</string>
-    <string name="hatail_sol">Conectar a Sol</string>
+    <string name="hatail_casa">Casa</string>
+    <string name="hatail_sol">Sol</string>
     <string name="hatail_account_help">First, sign in to Casa in the embedded Tailscale client. Return here with Back and associate that account. The installed official client uses a separate secure store.</string>
     <string name="hatail_account">Sign in to Tailscale</string>
     <string name="hatail_bind">Associate the current account with Casa</string>

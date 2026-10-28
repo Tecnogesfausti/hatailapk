@@ -1,5 +1,12 @@
 # Plan de validación
 
+## Selectores permanentes y escucha de ambos hogares, 28 de octubre de 2026
+
+- APK preparada sin instalar, a petición del usuario. Casa/Sol pasan a la cabecera; Atrás navega o envía la tarea al fondo, conservando selección, VPN y escuchas.
+- 45 pruebas de integración correctas, incluidas 6 nuevas: selección visual y bloqueo durante validación, configuración de escucha para ambos registros preservando sensores, rechazo de vinculaciones inválidas, aislamiento de tags/grupos y selección de hogar por enlace de notificación. Pasaron también 28 pruebas del núcleo, compilación/lint del selector y 8 pruebas de herramientas. Fuentes upstream verificadas.
+- Se reutiliza el gestor WebSocket multiserver de Companion, con ALWAYS en los hogares vinculados. Los dos endpoints usan la VPN privada sin fallback Cloudflare. No se han ejecutado pruebas físicas de cambio de hogar, acciones ni entrega con pantalla apagada en esta versión.
+- Procedimiento físico y limitaciones en [cambio de hogar y notificaciones](home-switching.md). No confundir pruebas automatizadas con entrega comprobada desde ambos HA.
+
 ## Presentación del historial, 28 de octubre de 2026
 
 - Revisión `79ee342`: título y mensaje primero, fecha y origen disponible al pie, sin etiquetas repetidas de aplicación ni hogar desconocido. Dos regresiones nuevas verifican títulos genéricos y metadatos compactos.
