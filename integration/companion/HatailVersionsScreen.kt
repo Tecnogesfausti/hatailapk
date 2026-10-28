@@ -37,7 +37,12 @@ import java.text.DateFormat
 import java.util.Date
 
 @Composable
-internal fun HatailVersionsHeader(state: HatailVersionsState, onHistory: () -> Unit = {}, onOpen: () -> Unit) {
+internal fun HatailVersionsHeader(
+    state: HatailVersionsState,
+    onHistory: () -> Unit = {},
+    onTracking: () -> Unit = {},
+    onOpen: () -> Unit,
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onOpen) {
             BadgedBox(badge = { if (state.hasNewerRelease) Badge() }) {
@@ -45,10 +50,10 @@ internal fun HatailVersionsHeader(state: HatailVersionsState, onHistory: () -> U
                     painterResource(R.drawable.hatail_versions),
                     contentDescription = stringResource(
                         if (state.hasNewerRelease) {
-                        R.string.hatail_versions_available
-                    } else {
-                        R.string.hatail_versions_title
-                    },
+                            R.string.hatail_versions_available
+                        } else {
+                            R.string.hatail_versions_title
+                        },
                     ),
                 )
             }
@@ -57,6 +62,12 @@ internal fun HatailVersionsHeader(state: HatailVersionsState, onHistory: () -> U
             Icon(
                 painterResource(R.drawable.hatail_history),
                 contentDescription = stringResource(R.string.hatail_history_button),
+            )
+        }
+        IconButton(onClick = onTracking) {
+            Icon(
+                painterResource(R.drawable.hatail_tracking),
+                contentDescription = stringResource(R.string.hatail_traccar_title),
             )
         }
     }

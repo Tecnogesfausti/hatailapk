@@ -1,10 +1,12 @@
 package io.homeassistant.companion.android.hatail
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -27,7 +29,9 @@ internal fun HatailHomeSwitcher(
 ) {
     Surface(color = LocalHAColorScheme.current.colorSurfaceLow) {
         Row(
-            Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = HADimens.SPACE4),
+            Modifier.fillMaxWidth().statusBarsPadding().horizontalScroll(
+                rememberScrollState(),
+            ).padding(horizontal = HADimens.SPACE4),
             horizontalArrangement = Arrangement.spacedBy(HADimens.SPACE2),
             verticalAlignment = Alignment.CenterVertically,
         ) {

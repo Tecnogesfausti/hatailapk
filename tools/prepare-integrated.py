@@ -128,6 +128,8 @@ tasks.matching { it.name.contains("GoogleServices") }.configureEach { enabled = 
             "open class HomeAssistantApplication : Application()", "open class HomeAssistantApplication : com.tailscale.ipn.App()")
     replace(ha / "app/src/main/AndroidManifest.xml", 'android:allowBackup="true"', 'android:allowBackup="false"')
     replace(ha / "app/src/main/AndroidManifest.xml", "</application>", '''
+        <service android:name="io.homeassistant.companion.android.hatail.HatailTraccarService"
+            android:exported="false" android:foregroundServiceType="location" />
         <service android:name="io.homeassistant.companion.android.hatail.HatailNotificationListener"
             android:label="@string/hatail_history_listener_label"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"

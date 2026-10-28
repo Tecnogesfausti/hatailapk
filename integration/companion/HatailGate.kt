@@ -53,6 +53,7 @@ fun HatailGate(content: @Composable () -> Unit) {
     val model: HatailGateViewModel = hiltViewModel()
     val versions: HatailVersionsViewModel = hiltViewModel()
     val history: HatailHistoryViewModel = hiltViewModel()
+    val tracking: HatailTraccarViewModel = hiltViewModel()
     val versionState by versions.state.collectAsStateWithLifecycle()
     var showVersions by rememberSaveable { mutableStateOf(false) }
     var showHistory by rememberSaveable { mutableStateOf(false) }
@@ -60,6 +61,9 @@ fun HatailGate(content: @Composable () -> Unit) {
     val selectedHome by model.selected.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = LocalActivity.current
+    var showTraccar by rememberSaveable {
+        mutableStateOf(activity?.intent?.getBooleanExtra(TRACCAR_SCREEN_EXTRA, false) == true)
+    }
     val owner = LocalLifecycleOwner.current
     val requested = (activity as? LaunchActivity)?.hatailRequestedNavigation
     LaunchedEffect(Unit) {
@@ -76,6 +80,7 @@ fun HatailGate(content: @Composable () -> Unit) {
                 model.refresh()
                 versions.refresh()
                 history.refreshAccess()
+                tracking.refresh()
             }
         }
         owner.lifecycle.addObserver(observer)
@@ -100,6 +105,7 @@ fun HatailGate(content: @Composable () -> Unit) {
                     requested?.takeIf { it.serverId == connected.serverId }
                         ?: LaunchActivity.DeepLink.NavigateTo(FrontendTarget.Default, connected.serverId),
                 ).apply {
+                    putExtra(TRACCAR_SCREEN_EXTRA, showTraccar)
                     putExtra(RENDERED_HOME_EXTRA, connected.home.name)
                     putExtra(RENDERED_SERVER_EXTRA, connected.serverId)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -135,10 +141,17 @@ fun HatailGate(content: @Composable () -> Unit) {
                     HatailVersionsHeader(
                         versionState,
                         onHistory = {
+                            showTraccar = false
                             showVersions = false
                             showHistory = true
                         },
+                        onTracking = {
+                            showHistory = false
+                            showVersions = false
+                            showTraccar = true
+                        },
                         onOpen = {
+                            showTraccar = false
                             showHistory = false
                             showVersions = true
                         },
@@ -166,7 +179,17 @@ fun HatailGate(content: @Composable () -> Unit) {
         }
     }
     // Back navigates within the frontend, or backgrounds the task without closing notification transports.
-    BackHandler(enabled = !contentReady && !showVersions && !showHistory) { activity?.moveTaskToBack(true) }
+    BackHandler(enabled = !contentReady && !showVersions && !showHistory && !showTraccar) {
+        activity?.moveTaskToBack(true)
+    }
+    if (showTraccar) {
+        val trackingState by tracking.state.collectAsStateWithLifecycle()
+        val trackingPermissions by tracking.permissions.collectAsStateWithLifecycle()
+        val suggestion by tracking.suggestion.collectAsStateWithLifecycle()
+        HATheme {
+            HatailTraccarSheet(trackingState, trackingPermissions, suggestion, tracking) { showTraccar = false }
+        }
+    }
     if (showVersions) {
         HATheme { HatailVersionsSheet(versionState, { versions.refresh(manual = true) }, { showVersions = false }) }
     }
