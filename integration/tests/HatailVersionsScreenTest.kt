@@ -2,6 +2,7 @@ package io.homeassistant.companion.android.hatail
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -37,9 +38,9 @@ class HatailVersionsScreenTest {
             ),
         )
         compose.setContent { HAThemeForPreview { HatailVersionsHeader(state) { opened++ } } }
-        compose.onNodeWithText(compose.activity.getString(R.string.hatail_versions_title)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.hatail_versions_title)).performClick()
         assertEquals(1, opened)
-        compose.onNodeWithText(compose.activity.getString(R.string.hatail_versions_summary, "2026.10-test", "1.105-test")).assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.hatail_history_button)).assertIsDisplayed()
     }
 
     @Test fun `Given version details when refreshing and closing then dispatch the expected actions`() {

@@ -2,7 +2,6 @@
 
 package io.homeassistant.companion.android.hatail
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,14 +9,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,39 +33,31 @@ import io.homeassistant.companion.android.common.compose.composable.rememberHAMo
 import io.homeassistant.companion.android.common.compose.theme.HADimens
 import io.homeassistant.companion.android.common.compose.theme.HATextStyle
 import io.homeassistant.companion.android.common.compose.theme.HAThemeForPreview
-import io.homeassistant.companion.android.common.compose.theme.LocalHAColorScheme
 import java.text.DateFormat
 import java.util.Date
 
 @Composable
 internal fun HatailVersionsHeader(state: HatailVersionsState, onHistory: () -> Unit = {}, onOpen: () -> Unit) {
-    Surface(color = LocalHAColorScheme.current.colorSurfaceLow) {
-        Column(
-            Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen)
-                .padding(horizontal = HADimens.SPACE4, vertical = HADimens.SPACE2),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    stringResource(
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onOpen) {
+            BadgedBox(badge = { if (state.hasNewerRelease) Badge() }) {
+                Icon(
+                    painterResource(R.drawable.hatail_versions),
+                    contentDescription = stringResource(
                         if (state.hasNewerRelease) {
-                            R.string.hatail_versions_available
-                        } else {
-                            R.string.hatail_versions_title
-                        },
+                        R.string.hatail_versions_available
+                    } else {
+                        R.string.hatail_versions_title
+                    },
                     ),
-                    style = HATextStyle.BodyMedium,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.weight(1f),
                 )
-                HAPlainButton(stringResource(R.string.hatail_history_button), onHistory)
             }
-            val companion = state.components.firstOrNull {
-                it.installed.repository == "home-assistant/android"
-            }?.installed?.version.orEmpty()
-            val tailscale = state.components.firstOrNull {
-                it.installed.repository == "tailscale/tailscale"
-            }?.installed?.version.orEmpty()
-            Text(stringResource(R.string.hatail_versions_summary, companion, tailscale), style = HATextStyle.BodyMedium)
+        }
+        IconButton(onClick = onHistory) {
+            Icon(
+                painterResource(R.drawable.hatail_history),
+                contentDescription = stringResource(R.string.hatail_history_button),
+            )
         }
     }
 }

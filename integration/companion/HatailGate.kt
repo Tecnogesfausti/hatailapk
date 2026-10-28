@@ -131,18 +131,20 @@ fun HatailGate(content: @Composable () -> Unit) {
             HatailHomeSwitcher(
                 selectedHome,
                 enabled = state != GateState.Loading,
+                actions = {
+                    HatailVersionsHeader(
+                        versionState,
+                        onHistory = {
+                            showVersions = false
+                            showHistory = true
+                        },
+                        onOpen = {
+                            showHistory = false
+                            showVersions = true
+                        },
+                    )
+                },
                 onSelect = model::selectHome,
-            )
-            HatailVersionsHeader(
-                versionState,
-                onHistory = {
-                    showVersions = false
-                    showHistory = true
-                },
-                onOpen = {
-                    showHistory = false
-                    showVersions = true
-                },
             )
         }
         Box(Modifier.weight(1f)) {

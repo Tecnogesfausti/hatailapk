@@ -10,6 +10,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -18,11 +19,17 @@ import io.homeassistant.companion.android.common.compose.theme.HADimens
 import io.homeassistant.companion.android.common.compose.theme.LocalHAColorScheme
 
 @Composable
-internal fun HatailHomeSwitcher(selected: Home, enabled: Boolean, onSelect: (Home) -> Unit) {
+internal fun HatailHomeSwitcher(
+    selected: Home,
+    enabled: Boolean,
+    actions: @Composable () -> Unit = {},
+    onSelect: (Home) -> Unit,
+) {
     Surface(color = LocalHAColorScheme.current.colorSurfaceLow) {
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = HADimens.SPACE4),
-            horizontalArrangement = Arrangement.spacedBy(HADimens.SPACE3),
+            horizontalArrangement = Arrangement.spacedBy(HADimens.SPACE2),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Home.entries.forEach { home ->
                 FilterChip(
@@ -50,6 +57,7 @@ internal fun HatailHomeSwitcher(selected: Home, enabled: Boolean, onSelect: (Hom
                     },
                 )
             }
+            actions()
         }
     }
 }

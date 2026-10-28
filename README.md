@@ -80,7 +80,7 @@ Consulta [arquitectura](docs/architecture.md), [actualizaciones upstream](docs/u
 
 ## Versiones dentro de la APK
 
-La cabecera «Versiones y novedades» está disponible junto a los selectores Casa/Sol. Muestra las versiones integradas de Companion y Tailscale; al tocarla aparecen los tres componentes (Companion, cliente Tailscale Android y motor Go), sus revisiones, la última estable consultada, la fecha y un enlace a las notas de versión. Abrir o cerrar esta información conserva el hogar y la VPN.
+El icono de información de la cabecera, junto a Casa/Sol y al icono de historial, abre «Versiones y novedades». Un indicador señala versiones nuevas. Al tocarlo aparecen los tres componentes (Companion, cliente Tailscale Android y motor Go), sus revisiones, la última estable consultada, la fecha y un enlace a las notas de versión. Abrir o cerrar esta información conserva el hogar y la VPN.
 
 La consulta pública a GitHub se programa cada 24 horas con Internet, sujeta a los retrasos de batería de Android. Hay consulta manual con un mínimo de 15 minutos y caché sin conexión. Se compara el historial de commits: distingue una actualización posterior, una estable anterior y una rama divergente, sin confundir el número de versión con compatibilidad probada. El aviso ayuda a preparar un ensayo; la recompilación sigue realizándose en el PC. Estas versiones corresponden a la APK, no a Home Assistant Core de las viviendas.
 
