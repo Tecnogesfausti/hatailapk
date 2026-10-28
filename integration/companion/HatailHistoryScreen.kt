@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import io.homeassistant.companion.android.BuildConfig
@@ -83,7 +84,7 @@ internal fun HatailHistorySheet(
                 Box(Modifier.weight(1f))
             } else {
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(HADimens.SPACE3)) {
-                    items(state.entries, key = { it.id }) { HistoryCard(it, loadImage) }
+                    items(state.entries, key = { it.id }) { HistoryCard(it, state.showSourceApp, loadImage) }
                 }
             }
             HAPlainButton(stringResource(R.string.hatail_versions_close), onDismiss)
@@ -110,35 +111,48 @@ private fun HistoryFilterButton(label: Int, selected: Boolean, onClick: () -> Un
 }
 
 @Composable
-private fun HistoryCard(item: HatailHistoryItem, loadImage: suspend (String) -> ByteArray?) {
+private fun HistoryCard(item: HatailHistoryItem, showSourceApp: Boolean, loadImage: suspend (String) -> ByteArray?) {
     Surface(color = LocalHAColorScheme.current.colorSurfaceLow) {
         Column(
             Modifier.fillMaxWidth().padding(HADimens.SPACE3),
             verticalArrangement = Arrangement.spacedBy(HADimens.SPACE2),
         ) {
-            val app = stringResource(
-                if (item.sourcePackage ==
-                    BuildConfig.APPLICATION_ID
-                ) {
-                    R.string.hatail_history_hatail
-                } else {
-                    R.string.hatail_history_official
-                },
-            )
-            Text(app, style = HATextStyle.Body.copy(fontWeight = FontWeight.SemiBold))
-            Text(item.origin ?: stringResource(R.string.hatail_history_unknown_home), style = HATextStyle.BodyMedium)
-            Text(
-                DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(item.postedAtEpochMs)),
-                style = HATextStyle.BodyMedium,
-            )
-            if (item.title.isNotBlank()) {
+            val title = item.title.trim().takeUnless { value ->
+                listOf("HATailAPK", "HATailAPK · prueba", "Home Assistant", "Home Assistant Companion")
+                    .any { it.equals(value, ignoreCase = true) }
+            }.orEmpty()
+            if (title.isNotBlank()) {
                 Text(
-                    item.title,
+                    title,
                     style = HATextStyle.Body.copy(fontWeight = FontWeight.SemiBold),
+                    textAlign = TextAlign.Start,
                 )
             }
-            if (item.message.isNotBlank()) Text(item.message, style = HATextStyle.Body)
+            if (item.message.isNotBlank() && item.message.trim() != title) {
+                Text(
+                    item.message,
+                    style = HATextStyle.Body.copy(
+                        fontWeight = if (title.isBlank()) FontWeight.SemiBold else FontWeight.Normal,
+                    ),
+                    textAlign = TextAlign.Start,
+                )
+            }
             if (item.imageExpected || item.hasImage) HistoryImage(item, loadImage)
+            val source = if (showSourceApp) {
+                stringResource(
+                    if (item.sourcePackage == BuildConfig.APPLICATION_ID) {
+                        R.string.hatail_history_source_integrated
+                    } else {
+                        R.string.hatail_history_source_official
+                    },
+                )
+            } else null
+            val metadata = listOfNotNull(
+                DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(item.postedAtEpochMs)),
+                item.origin?.trim()?.takeIf { it.isNotBlank() },
+                source,
+            ).joinToString(" · ")
+            Text(metadata, style = HATextStyle.BodyMedium, textAlign = TextAlign.Start)
         }
     }
 }

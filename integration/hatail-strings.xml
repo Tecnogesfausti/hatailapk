@@ -54,7 +54,8 @@
     <string name="hatail_history_all">Todos</string>
     <string name="hatail_history_hatail">HATailAPK</string>
     <string name="hatail_history_official">Companion oficial</string>
-    <string name="hatail_history_unknown_home">El aviso no indica hogar</string>
+    <string name="hatail_history_source_integrated">Integrado</string>
+    <string name="hatail_history_source_official">Companion</string>
     <string name="hatail_history_image">Imagen del aviso; tocar para ampliar</string>
     <string name="hatail_history_image_missing">Imagen no disponible o pendiente de copiar. El texto se conserva.</string>
     <string name="hatail_history_sample_channel">Pruebas del historial</string>

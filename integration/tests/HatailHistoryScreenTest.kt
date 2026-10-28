@@ -1,13 +1,16 @@
 package io.homeassistant.companion.android.hatail
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import io.homeassistant.companion.android.HiltComponentActivity
+import io.homeassistant.companion.android.BuildConfig
 import io.homeassistant.companion.android.common.R
 import io.homeassistant.companion.android.common.compose.theme.HAThemeForPreview
 import org.junit.Assert.assertEquals
@@ -51,5 +54,36 @@ class HatailHistoryScreenTest {
         assertEquals(HistoryFilter.Official, selected)
         compose.onNodeWithText(compose.activity.getString(R.string.hatail_versions_close)).performClick()
         assertEquals(1, closed)
+    }
+
+    @Test fun `Given a generic app title and unknown home then show the alert content without repeated labels`() {
+        val item = HatailHistoryItem(
+            "a".repeat(64), BuildConfig.APPLICATION_ID, 1000, "HATailAPK", "Puerta del garaje abierta", null, false,
+        )
+        compose.setContent {
+            HAThemeForPreview {
+                HatailHistorySheet(HatailHistoryState(entries = listOf(item), accessGranted = true), {}, { null }, {}, {}, {})
+            }
+        }
+        compose.onNodeWithText("Puerta del garaje abierta").assertIsDisplayed()
+        // Only the global source filter retains the app name.
+        compose.onAllNodesWithText(compose.activity.getString(R.string.hatail_history_hatail)).assertCountEquals(1)
+        compose.onNodeWithText("El aviso no indica hogar").assertDoesNotExist()
+    }
+
+    @Test fun `Given a meaningful home and mixed sources then keep them in compact metadata`() {
+        val item = HatailHistoryItem(
+            "a".repeat(64), BuildConfig.APPLICATION_ID, 1000, "Alarma", "Movimiento detectado", "Sol", false,
+        )
+        compose.setContent {
+            HAThemeForPreview {
+                HatailHistorySheet(
+                    HatailHistoryState(entries = listOf(item), accessGranted = true, showSourceApp = true),
+                    {}, { null }, {}, {}, {},
+                )
+            }
+        }
+        compose.onNodeWithText("Alarma").assertIsDisplayed()
+        compose.onNodeWithText("Sol · Integrado", substring = true).assertExists()
     }
 }

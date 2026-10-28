@@ -48,6 +48,7 @@ internal data class HatailHistoryState(
     val filter: HistoryFilter = HistoryFilter.All,
     val accessGranted: Boolean = false,
     val sampleFailed: Boolean = false,
+    val showSourceApp: Boolean = false,
 )
 
 internal class HatailHistoryAccess @Inject constructor(@ApplicationContext private val context: Context) {
@@ -101,6 +102,9 @@ internal class HatailHistoryViewModel @Inject constructor(
             filter = selected,
             accessGranted = allowed,
             sampleFailed = sampleError,
+            showSourceApp = selected == HistoryFilter.All &&
+                alerts.any { it.sourcePackage == BuildConfig.APPLICATION_ID } &&
+                alerts.any { it.sourcePackage in OFFICIAL_COMPANION_PACKAGES },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HatailHistoryState())
 
