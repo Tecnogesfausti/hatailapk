@@ -92,7 +92,10 @@ internal class HatailHistoryViewModel @Inject constructor(
     private val entries = cutoff.flatMapLatest(history::observe)
     val state = combine(entries, filter, granted, sampleFailed) { alerts, selected, allowed, sampleError ->
         HatailHistoryState(
-            entries = alerts.filter {
+            entries = alerts.filterNot {
+                it.title.trim().lowercase() in setOf("updating sensors", "actualizando sensores") &&
+                    it.message.isBlank() && !it.imageExpected
+            }.filter {
                 when (selected) {
                     HistoryFilter.All -> true
                     HistoryFilter.Hatail -> it.sourcePackage == BuildConfig.APPLICATION_ID

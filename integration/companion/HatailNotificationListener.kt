@@ -31,6 +31,7 @@ internal val OFFICIAL_COMPANION_PACKAGES =
 
 internal fun historyAcceptsNotification(packageName: String, flags: Int, channel: String?): Boolean =
     (packageName == BuildConfig.APPLICATION_ID || packageName in OFFICIAL_COMPANION_PACKAGES) &&
+        channel != "Sensor Worker" &&
         flags and Notification.FLAG_GROUP_SUMMARY == 0 &&
         flags and Notification.FLAG_FOREGROUND_SERVICE == 0 &&
         !channel.orEmpty().lowercase(Locale.ROOT).startsWith("leakcanary")

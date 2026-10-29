@@ -28,6 +28,12 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class)
 class HatailNotificationCaptureTest {
+    @Test fun `sensor worker status is excluded without hiding ordinary alerts`() {
+        assertFalse(historyAcceptsNotification(BuildConfig.APPLICATION_ID, 0, "Sensor Worker"))
+        assertFalse(historyAcceptsNotification("io.homeassistant.companion.android", 0, "Sensor Worker"))
+        assertTrue(historyAcceptsNotification(BuildConfig.APPLICATION_ID, 0, "alerts"))
+    }
+
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val history = mockk<HatailHistoryRepository>(relaxed = true)
     private val clock = mockk<Clock>()
